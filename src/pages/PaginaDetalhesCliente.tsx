@@ -3,10 +3,15 @@ import { useParams, Link } from 'react-router-dom';
 import type { Cliente, Avaliacao } from '../types';
 import api from '../services/api';
 import FormularioAvaliacao from '../components/FormularioAvaliacao';
+import { AxiosError } from 'axios'; // 1. IMPORTAR
 
 import { Container, Typography, Card, CardContent, CircularProgress, Button, Accordion, AccordionSummary, AccordionDetails, Box, IconButton, Grid, Divider } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import EditIcon from '@mui/icons-material/Edit';
+
+import { gerarPDFAvaliacao } from '../services/pdfGenerator';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
+
 
 const CampoDetalhe = ({ label, value }: { label: string; value?: string | number | boolean }) => {
     if (value === undefined || value === null || value === '') return null;
@@ -109,10 +114,13 @@ function PaginaDetalhesCliente() {
         avaliacoes.map((avaliacao) => (
           <Accordion key={avaliacao.id}>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography>Avaliação de {new Date(avaliacao.dataAvaliacao).toLocaleString()}</Typography>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
-                <Typography>Avaliação de {new Date(avaliacao.dataAvaliacao).toLocaleString()}</Typography>
+                <IconButton size="small" onClick={(e) => { e.stopPropagation(); if (cliente) gerarPDFAvaliacao(cliente, avaliacao); }}>
+                  <PictureAsPdfIcon fontSize="small" />
+                </IconButton>
                 <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleAbrirModalEdicao(avaliacao); }}>
-                    <EditIcon fontSize="small" />
+                  <EditIcon fontSize="small" />
                 </IconButton>
               </Box>
             </AccordionSummary>
