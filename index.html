@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Sistema de gerenciamento de pacientes para clínica de fisioterapia Soul Saluttē" />
+    <meta name="theme-color" content="#1A7B7D" />
+    
+    <!-- Preconnect to external domains for better performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    
+    <!-- Google Fonts - Inter for better readability -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+    
+    <title>Soul Saluttē - Sistema de Gerenciamento</title>
+    
+    <style>
+      /* Loading screen styles */
+      #root {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      }
+      
+      .loading {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: #EDE2C9;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        z-index: 9999;
+      }
+      
+      .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid #948066;
+        border-top: 3px solid #1A7B7D;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 16px;
+      }
+      
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      
+      .loading-text {
+        color: #1A7B7D;
+        font-size: 16px;
+        font-weight: 500;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root">
+      <!-- Loading fallback -->
+      <div class="loading">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Carregando Soul Saluttē...</div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
