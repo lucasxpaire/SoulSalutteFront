@@ -1,26 +1,45 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { CalendarDays, Users, FileText, Clock } from 'lucide-react';
-import { mockSessoes, mockClientes, mockAvaliacoes } from '@/data/mockData';
+import { getSessoes, getClientes } from '@/services/api';
+import { Sessao, Cliente } from '@/types';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { toast } from 'sonner';
 
 const Dashboard: React.FC = () => {
   const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(new Date());
+  const [sessoes, setSessoes] = useState<Sessao[]>([]);
+  const [clientes, setClientes] = useState<Cliente[]>([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [sessoesData, clientesData] = await Promise.all([
+          getSessoes(),
+          getClientes(),
+        ]);
+        setSessoes(sessoesData);
+        setClientes(clientesData);
+      } catch (error) {
+        toast.error('Erro ao carregar dados do dashboard.');
+        console.error(error);
+      }
+    };
+    fetchData();
+  }, []);
   
   // Calcular estatísticas
-  const totalClientes = mockClientes.length;
-  const totalAvaliacoes = mockAvaliacoes.length;
-  const sessoesHoje = mockSessoes.filter(sessao => {
+  const totalClientes = clientes.length;
+  const sessoesHoje = sessoes.filter(sessao => {
     const hoje = format(new Date(), 'yyyy-MM-dd');
-    const dataSessao = format(new Date(sessao.DATA_HORA_INICIO), 'yyyy-MM-dd');
+    const dataSessao = format(new Date(sessao.dataHoraInicio), 'yyyy-MM-dd');
     return dataSessao === hoje;
   });
   
-  const sessoesAgendadas = mockSessoes.filter(sessao => sessao.STATUS === 'AGENDADA');
+  const sessoesAgendadas = sessoes.filter(sessao => sessao.status === 'AGENDADA');
   
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -79,7 +98,7 @@ const Dashboard: React.FC = () => {
             <FileText className="h-4 w-4" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalAvaliacoes}</div>
+            <div className="text-2xl font-bold">...</div>
             <p className="text-xs opacity-80">
               fichas de avaliação
             </p>
@@ -126,22 +145,22 @@ const Dashboard: React.FC = () => {
             <div className="space-y-4">
               {sessoesHoje.length > 0 ? (
                 sessoesHoje.map((sessao) => {
-                  const cliente = mockClientes.find(c => c.ID_CLIENTE === sessao.CLIENTE_ID);
-                  const horario = format(new Date(sessao.DATA_HORA_INICIO), 'HH:mm', { locale: ptBR });
+                  const cliente = clientes.find(c => c.id === sessao.clienteId);
+                  const horario = format(new Date(sessao.dataHoraInicio), 'HH:mm', { locale: ptBR });
                   
                   return (
-                    <div key={sessao.ID_SESSAO} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div key={sessao.id} className="flex items-center justify-between p-3 border rounded-lg">
                       <div className="flex-1">
-                        <div className="font-medium">{cliente?.NOME}</div>
+                        <div className="font-medium">{cliente?.nome}</div>
                         <div className="text-sm text-muted-foreground">{horario}</div>
-                        {sessao.NOTAS_SESSAO && (
+                        {sessao.notasSessao && (
                           <div className="text-sm text-muted-foreground mt-1">
-                            {sessao.NOTAS_SESSAO}
+                            {sessao.notasSessao}
                           </div>
                         )}
                       </div>
-                      <Badge className={getStatusColor(sessao.STATUS)}>
-                        {sessao.STATUS.toLowerCase()}
+                      <Badge className={getStatusColor(sessao.status)}>
+                        {sessao.status.toLowerCase()}
                       </Badge>
                     </div>
                   );
@@ -157,7 +176,7 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Sessões Recentes */}
-      <Card>
+      {/* <Card>
         <CardHeader>
           <CardTitle>Todas as Sessões</CardTitle>
         </CardHeader>
@@ -186,7 +205,7 @@ const Dashboard: React.FC = () => {
             })}
           </div>
         </CardContent>
-      </Card>
+      </Card> */}
     </div>
   );
 };

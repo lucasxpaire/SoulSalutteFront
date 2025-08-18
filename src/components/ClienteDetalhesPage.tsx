@@ -1,0 +1,160 @@
+import React, { useEffect, useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { ArrowLeft, Edit, Trash2, FilePlus, User, Mail, Phone, Cake, Briefcase, MapPin } from 'lucide-react';
+import { Cliente, AvaliacaoFisioterapeutica, Sessao } from '@/types';
+import { getAvaliacoesByCliente, getSessoesByClienteId } from '@/services/api'; 
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { toast } from 'sonner';
+
+interface ClienteDetalhesPageProps {
+  cliente: Cliente;
+  onBack: () => void;
+  onEdit: (cliente: Cliente) => void;
+  onDelete: (cliente: Cliente) => void;
+  onAddAvaliacao: (clienteId: number) => void;
+}
+
+const InfoCard: React.FC<{ icon: React.ElementType; label: string; value?: string | null }> = ({ icon: Icon, label, value }) => (
+  <div className="flex items-start text-sm">
+    <Icon className="w-4 h-4 mr-3 mt-1 text-primary flex-shrink-0" />
+    <div className="flex flex-col">
+      <span className="font-semibold text-muted-foreground">{label}</span>
+      <span className="text-foreground">{value || 'Não informado'}</span>
+    </div>
+  </div>
+);
+
+const ClienteDetalhesPage: React.FC<ClienteDetalhesPageProps> = ({ cliente, onBack, onEdit, onDelete, onAddAvaliacao }) => {
+  const [avaliacoes, setAvaliacoes] = useState<AvaliacaoFisioterapeutica[]>([]);
+  const [sessoes, setSessoes] = useState<Sessao[]>([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [avaliacoesData, sessoesData] = await Promise.all([
+          getAvaliacoesByCliente(cliente.id),
+          getSessoesByClienteId(cliente.id)
+        ]);
+        setAvaliacoes(avaliacoesData);
+        setSessoes(sessoesData);
+      } catch (error) {
+        toast.error('Erro ao buscar dados do cliente.');
+        console.error(error);
+      }
+    };
+    fetchData();
+  }, [cliente.id]);
+
+  const calcularIdade = (dataNascimento: string) => {
+    if (!dataNascimento) return '';
+    const hoje = new Date();
+    const nascimento = new Date(dataNascimento);
+    let idade = hoje.getFullYear() - nascimento.getFullYear();
+    const m = hoje.getMonth() - nascimento.getMonth();
+    if (m < 0 || (m === 0 && hoje.getDate() < nascimento.getDate())) {
+      idade--;
+    }
+    return `${idade} anos`;
+  };
+
+  return (
+    <div className="p-6 space-y-6 animate-fade-in">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" onClick={onBack}>
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold">{cliente.nome}</h1>
+            <p className="text-muted-foreground">Detalhes do paciente</p>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => onEdit(cliente)}>
+            <Edit className="w-4 h-4 mr-2" />
+            Editar
+          </Button>
+          <Button variant="destructive" onClick={() => onDelete(cliente)}>
+            <Trash2 className="w-4 h-4 mr-2" />
+            Excluir
+          </Button>
+        </div>
+      </div>
+
+      {/* Informações do Cliente */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Informações Pessoais</CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <InfoCard icon={User} label="Sexo" value={cliente.sexo === 'F' ? 'Feminino' : 'Masculino'} />
+          <InfoCard icon={Mail} label="Email" value={cliente.email} />
+          <InfoCard icon={Phone} label="Telefone" value={cliente.telefone} />
+          <InfoCard icon={Cake} label="Idade" value={calcularIdade(cliente.dataNascimento)} />
+          <InfoCard icon={Briefcase} label="Profissão" value={cliente.profissao} />
+          <InfoCard icon={MapPin} label="Endereço" value={`${cliente.enderecoResidencial}, ${cliente.bairro}, ${cliente.cidade}`} />
+        </CardContent>
+      </Card>
+
+      {/* Avaliações */}
+      <Card>
+        <CardHeader className="flex flex-row justify-between items-center">
+          <CardTitle>Avaliações Fisioterapêuticas</CardTitle>
+          <Button onClick={() => onAddAvaliacao(cliente.id)}>
+            <FilePlus className="w-4 h-4 mr-2" />
+            Nova Avaliação
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {avaliacoes.length > 0 ? (
+            <div className="space-y-3">
+              {avaliacoes.map(ava => (
+                <div key={ava.id} className="flex justify-between items-center p-3 border rounded-lg">
+                  <div>
+                    <p className="font-semibold">{format(new Date(ava.dataAvaliacao), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}</p>
+                    <p className="text-sm text-muted-foreground">{ava.diagnosticoFisioterapeutico}</p>
+                  </div>
+                  <Button variant="outline" size="sm">Ver Detalhes</Button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-center py-4">Nenhuma avaliação encontrada.</p>
+          )}
+        </CardContent>
+      </Card>
+      
+       {/* Sessões */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Histórico de Sessões</CardTitle>
+        </CardHeader>
+        <CardContent>
+           {sessoes.length > 0 ? (
+            <div className="space-y-3">
+              {sessoes.map(sessao => (
+                <div key={sessao.id} className="flex justify-between items-center p-3 border rounded-lg">
+                  <div>
+                    <p className="font-semibold">{sessao.nome}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {format(new Date(sessao.dataHoraInicio), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                    </p>
+                  </div>
+                  <Badge>{sessao.status}</Badge>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-center py-4">Nenhuma sessão encontrada.</p>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export default ClienteDetalhesPage;

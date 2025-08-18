@@ -4,22 +4,37 @@ import LoginForm from '@/components/LoginForm';
 import Layout from '@/components/Layout';
 import Dashboard from '@/components/Dashboard';
 import ClientesPage from '@/components/ClientesPage';
+import ClienteDetalhesPage from '@/components/ClienteDetalhesPage';
+import CalendarioPage from '@/components/CalendarioPage';
 import ClienteForm from '@/components/ClienteForm';
+import AvaliacaoForm from '@/components/AvaliacaoForm';
+import SessaoForm from '@/components/SessaoForm';
+import ConfirmationDialog from '@/components/ConfirmationDialog';
 import { Toaster } from '@/components/ui/sonner';
-import { Cliente, AvaliacaoFisioterapeutica } from '@/types';
+import { Cliente, Sessao } from '@/types';
 import 'date-fns/locale/pt-BR';
+import { deleteCliente as apiDeleteCliente } from '@/services/api';
+import { toast } from 'sonner';
 
 const AppContent: React.FC = () => {
   const { user } = useAuth();
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
   
   // Modal states
   const [isClienteFormOpen, setIsClienteFormOpen] = useState(false);
   const [isAvaliacaoFormOpen, setIsAvaliacaoFormOpen] = useState(false);
+  const [isSessaoFormOpen, setIsSessaoFormOpen] = useState(false);
+  const [isConfirmDeleteDialogOpen, setIsConfirmDeleteDialogOpen] = useState(false);
+  
   const [editingCliente, setEditingCliente] = useState<Cliente | undefined>(undefined);
-  const [editingAvaliacao, setEditingAvaliacao] = useState<AvaliacaoFisioterapeutica | undefined>(undefined);
-  const [avaliacaoClienteId, setAvaliacaoClienteId] = useState<string>('');
+  const [editingSessao, setEditingSessao] = useState<Sessao | undefined>(undefined);
+  const [clienteToDelete, setClienteToDelete] = useState<Cliente | null>(null);
+  const [avaliacaoClienteId, setAvaliacaoClienteId] = useState<number>(0);
+  const [initialSessaoDate, setInitialSessaoDate] = useState<Date>(new Date());
+
+  const forceRefresh = () => setRefreshKey(prev => prev + 1);
 
   // Handlers
   const handleNavigate = (page: string) => {
@@ -32,9 +47,10 @@ const AppContent: React.FC = () => {
     setCurrentPage('cliente-detalhes');
   };
 
-  const handleBackFromClienteDetalhes = () => {
+  const handleBack = () => {
     setSelectedCliente(null);
     setCurrentPage('clientes');
+    forceRefresh();
   };
 
   const handleAddCliente = () => {
@@ -47,31 +63,59 @@ const AppContent: React.FC = () => {
     setIsClienteFormOpen(true);
   };
 
-  const handleSaveCliente = (cliente: Cliente) => {
-    // Simula salvamento - em produção faria POST/PUT para API
-    console.log('Salvando cliente:', cliente);
+  const handleSaveCliente = () => {
     setIsClienteFormOpen(false);
     setEditingCliente(undefined);
+    forceRefresh();
+    if (!selectedCliente) {
+      setCurrentPage('clientes');
+    }
   };
 
-  const handleAddAvaliacao = (clienteId: string) => {
+  const handleDeleteCliente = (cliente: Cliente) => {
+    setClienteToDelete(cliente);
+    setIsConfirmDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteCliente = async () => {
+    if (clienteToDelete) {
+      try {
+        await apiDeleteCliente(clienteToDelete.id);
+        toast.success(`Cliente ${clienteToDelete.nome} excluído com sucesso.`);
+        setClienteToDelete(null);
+        setIsConfirmDeleteDialogOpen(false);
+        handleBack();
+      } catch (error: any) {
+        toast.error(error.response?.data?.message || 'Erro ao excluir cliente.');
+      }
+    }
+  };
+
+  const handleAddAvaliacao = (clienteId: number) => {
     setAvaliacaoClienteId(clienteId);
-    setEditingAvaliacao(undefined);
     setIsAvaliacaoFormOpen(true);
   };
-
-  const handleEditAvaliacao = (avaliacao: AvaliacaoFisioterapeutica) => {
-    setAvaliacaoClienteId(avaliacao.ID_CLIENTE);
-    setEditingAvaliacao(avaliacao);
-    setIsAvaliacaoFormOpen(true);
-  };
-
-  const handleSaveAvaliacao = (avaliacao: AvaliacaoFisioterapeutica) => {
-    // Simula salvamento - em produção faria POST/PUT para API
-    console.log('Salvando avaliação:', avaliacao);
+  
+  const handleSaveAvaliacao = () => {
     setIsAvaliacaoFormOpen(false);
-    setEditingAvaliacao(undefined);
-    setAvaliacaoClienteId('');
+    forceRefresh();
+  };
+
+  const handleAddSessao = (date: Date) => {
+    setEditingSessao(undefined);
+    setInitialSessaoDate(date);
+    setIsSessaoFormOpen(true);
+  };
+
+  const handleEditSessao = (sessao: Sessao) => {
+    setEditingSessao(sessao);
+    setIsSessaoFormOpen(true);
+  };
+
+  const handleSaveSessao = () => {
+    setIsSessaoFormOpen(false);
+    setEditingSessao(undefined);
+    forceRefresh();
   };
 
   if (!user) {
@@ -81,11 +125,12 @@ const AppContent: React.FC = () => {
   const renderCurrentPage = () => {
     switch (currentPage) {
       case 'dashboard':
-        return <Dashboard />;
+        return <Dashboard key={refreshKey} />;
       
       case 'clientes':
         return (
           <ClientesPage
+            key={refreshKey}
             onSelectCliente={handleSelectCliente}
             onAddCliente={handleAddCliente}
           />
@@ -93,30 +138,18 @@ const AppContent: React.FC = () => {
       
       case 'cliente-detalhes':
         return selectedCliente ? (
-          <div className="p-6">
-            <h1>Detalhes do Cliente: {selectedCliente.NOME}</h1>
-            <p>Componente ClienteDetalhes será implementado em breve...</p>
-            <button onClick={handleBackFromClienteDetalhes} className="mt-4 px-4 py-2 bg-primary text-white rounded">
-              Voltar para Clientes
-            </button>
-          </div>
+          <ClienteDetalhesPage
+            key={selectedCliente.id + refreshKey}
+            cliente={selectedCliente}
+            onBack={handleBack}
+            onEdit={handleEditCliente}
+            onDelete={handleDeleteCliente}
+            onAddAvaliacao={handleAddAvaliacao}
+          />
         ) : null;
       
       case 'calendario':
-        return (
-          <div className="p-6">
-            <h1>Calendário</h1>
-            <p>Componente CalendarioPage será implementado em breve...</p>
-          </div>
-        );
-      
-      case 'avaliacoes':
-        return (
-          <div className="p-6">
-            <h1>Avaliações</h1>
-            <p>Componente AvaliacoesPage será implementado em breve...</p>
-          </div>
-        );
+        return <CalendarioPage key={refreshKey} onAddSessao={handleAddSessao} onEditSessao={handleEditSessao} />;
       
       default:
         return <Dashboard />;
@@ -127,24 +160,35 @@ const AppContent: React.FC = () => {
     <Layout currentPage={currentPage} onNavigate={handleNavigate}>
       {renderCurrentPage()}
       
-      {/* Modals */}
       <ClienteForm
         isOpen={isClienteFormOpen}
         onClose={() => setIsClienteFormOpen(false)}
         cliente={editingCliente}
         onSave={handleSaveCliente}
       />
-      
-      {/* Temporariamente comentado até migrar o componente */}
-      {/*
+
       <AvaliacaoForm
         isOpen={isAvaliacaoFormOpen}
         onClose={() => setIsAvaliacaoFormOpen(false)}
         clienteId={avaliacaoClienteId}
-        avaliacao={editingAvaliacao}
         onSave={handleSaveAvaliacao}
       />
-      */}
+
+      <SessaoForm
+        isOpen={isSessaoFormOpen}
+        onClose={() => setIsSessaoFormOpen(false)}
+        {...(editingSessao && { sessao: editingSessao })}
+        initialDate={initialSessaoDate}
+        onSave={handleSaveSessao}
+      />
+
+      <ConfirmationDialog
+        isOpen={isConfirmDeleteDialogOpen}
+        onClose={() => setIsConfirmDeleteDialogOpen(false)}
+        onConfirm={confirmDeleteCliente}
+        title="Confirmar Exclusão"
+        description={`Você tem certeza que deseja excluir o cliente "${clienteToDelete?.nome}"? Esta ação não pode ser desfeita.`}
+      />
       
       <Toaster />
     </Layout>

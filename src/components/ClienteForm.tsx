@@ -6,12 +6,13 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Cliente } from '@/types';
 import { toast } from 'sonner';
+import { createCliente, updateCliente } from '@/services/api';
 
 interface ClienteFormProps {
   isOpen: boolean;
   onClose: () => void;
   cliente?: Cliente | undefined;
-  onSave: (cliente: Cliente) => void;
+  onSave: () => void;
 }
 
 const ClienteForm: React.FC<ClienteFormProps> = ({
@@ -20,70 +21,54 @@ const ClienteForm: React.FC<ClienteFormProps> = ({
   cliente,
   onSave
 }) => {
-  const [formData, setFormData] = useState<Partial<Cliente>>({
-    NOME: '',
-    EMAIL: '',
-    TELEFONE: '',
-    DATA_NASCIMENTO: '',
-    SEXO: 'F',
-    CIDADE: '',
-    BAIRRO: '',
-    PROFISSAO: '',
-    ENDERECO_RESIDENCIAL: '',
-    ENDERECO_COMERCIAL: '',
-    NATURALIDADE: '',
-    ESTADO_CIVIL: 'Solteiro'
-  });
+  const [formData, setFormData] = useState<Partial<Cliente>>({});
 
   useEffect(() => {
     if (cliente) {
-      setFormData(cliente);
+      setFormData({
+        ...cliente,
+        dataNascimento: cliente.dataNascimento ? cliente.dataNascimento.split('T')[0] : '',
+      } as Partial<Cliente>);
     } else {
       setFormData({
-        NOME: '',
-        EMAIL: '',
-        TELEFONE: '',
-        DATA_NASCIMENTO: '',
-        SEXO: 'F',
-        CIDADE: '',
-        BAIRRO: '',
-        PROFISSAO: '',
-        ENDERECO_RESIDENCIAL: '',
-        ENDERECO_COMERCIAL: '',
-        NATURALIDADE: '',
-        ESTADO_CIVIL: 'Solteiro'
+        nome: '',
+        email: '',
+        telefone: '',
+        dataNascimento: '',
+        sexo: 'F',
+        cidade: '',
+        bairro: '',
+        profissao: '',
+        enderecoResidencial: '',
+        enderecoComercial: '',
+        naturalidade: '',
+        estadoCivil: 'Solteiro'
       });
     }
   }, [cliente, isOpen]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.NOME || !formData.EMAIL || !formData.TELEFONE) {
+    if (!formData.nome || !formData.email || !formData.telefone) {
       toast.error('Por favor, preencha os campos obrigatórios');
       return;
     }
 
-    const clienteToSave: Cliente = {
-      ID_CLIENTE: cliente?.ID_CLIENTE || Date.now().toString(),
-      DATA_CADASTRO: cliente?.DATA_CADASTRO ?? new Date().toISOString().split('T')[0],
-      NOME: formData.NOME!,
-      EMAIL: formData.EMAIL!,
-      TELEFONE: formData.TELEFONE!,
-      DATA_NASCIMENTO: formData.DATA_NASCIMENTO || '',
-      SEXO: formData.SEXO as 'M' | 'F' | 'Outro',
-      CIDADE: formData.CIDADE || '',
-      BAIRRO: formData.BAIRRO || '',
-      PROFISSAO: formData.PROFISSAO || '',
-      ENDERECO_RESIDENCIAL: formData.ENDERECO_RESIDENCIAL || '',
-      ENDERECO_COMERCIAL: formData.ENDERECO_COMERCIAL || '',
-      NATURALIDADE: formData.NATURALIDADE || '',
-      ESTADO_CIVIL: formData.ESTADO_CIVIL as 'Solteiro' | 'Casado' | 'Divorciado' | 'Viúvo' | 'União Estável'
-    };
-
-    onSave(clienteToSave);
-    toast.success(cliente ? 'Cliente atualizado com sucesso!' : 'Cliente cadastrado com sucesso!');
-    onClose();
+    try {
+      if (cliente && cliente.id) {
+        await updateCliente(cliente.id, formData);
+        toast.success('Cliente atualizado com sucesso!');
+      } else {
+        await createCliente(formData as Omit<Cliente, 'id' | 'dataCadastro'>);
+        toast.success('Cliente cadastrado com sucesso!');
+      }
+      onSave();
+      onClose();
+    } catch (error) {
+      toast.error('Ocorreu um erro ao salvar o cliente.');
+      console.error(error);
+    }
   };
 
   const handleChange = (field: keyof Cliente, value: string) => {
@@ -115,8 +100,8 @@ const ClienteForm: React.FC<ClienteFormProps> = ({
                 <Label htmlFor="nome">Nome *</Label>
                 <Input
                   id="nome"
-                  value={formData.NOME}
-                  onChange={(e) => handleChange('NOME', e.target.value)}
+                  value={formData.nome || ''}
+                  onChange={(e) => handleChange('nome', e.target.value)}
                   required
                 />
               </div>
@@ -126,8 +111,8 @@ const ClienteForm: React.FC<ClienteFormProps> = ({
                 <Input
                   id="email"
                   type="email"
-                  value={formData.EMAIL}
-                  onChange={(e) => handleChange('EMAIL', e.target.value)}
+                  value={formData.email || ''}
+                  onChange={(e) => handleChange('email', e.target.value)}
                   required
                 />
               </div>
@@ -138,20 +123,20 @@ const ClienteForm: React.FC<ClienteFormProps> = ({
                 <Label htmlFor="telefone">Telefone *</Label>
                 <Input
                   id="telefone"
-                  value={formData.TELEFONE}
-                  onChange={(e) => handleChange('TELEFONE', e.target.value)}
+                  value={formData.telefone || ''}
+                  onChange={(e) => handleChange('telefone', e.target.value)}
                   placeholder="(11) 99999-9999"
                   required
                 />
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="data_nascimento">Data de Nascimento</Label>
+                <Label htmlFor="dataNascimento">Data de Nascimento</Label>
                 <Input
-                  id="data_nascimento"
+                  id="dataNascimento"
                   type="date"
-                  value={formData.DATA_NASCIMENTO}
-                  onChange={(e) => handleChange('DATA_NASCIMENTO', e.target.value)}
+                  value={formData.dataNascimento || ''}
+                  onChange={(e) => handleChange('dataNascimento', e.target.value)}
                 />
               </div>
             </div>
@@ -159,7 +144,7 @@ const ClienteForm: React.FC<ClienteFormProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="sexo">Sexo</Label>
-                <Select value={formData.SEXO ?? ''} onValueChange={(value) => handleChange('SEXO', value)}>
+                <Select value={formData.sexo ?? 'F'} onValueChange={(value) => handleChange('sexo', value)}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -172,8 +157,8 @@ const ClienteForm: React.FC<ClienteFormProps> = ({
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="estado_civil">Estado Civil</Label>
-                <Select value={formData.ESTADO_CIVIL ?? 'Solteiro'} onValueChange={(value) => handleChange('ESTADO_CIVIL', value)}>
+                <Label htmlFor="estadoCivil">Estado Civil</Label>
+                <Select value={formData.estadoCivil ?? 'Solteiro'} onValueChange={(value) => handleChange('estadoCivil', value)}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -193,8 +178,8 @@ const ClienteForm: React.FC<ClienteFormProps> = ({
                 <Label htmlFor="profissao">Profissão</Label>
                 <Input
                   id="profissao"
-                  value={formData.PROFISSAO}
-                  onChange={(e) => handleChange('PROFISSAO', e.target.value)}
+                  value={formData.profissao || ''}
+                  onChange={(e) => handleChange('profissao', e.target.value)}
                 />
               </div>
               
@@ -202,8 +187,8 @@ const ClienteForm: React.FC<ClienteFormProps> = ({
                 <Label htmlFor="naturalidade">Naturalidade</Label>
                 <Input
                   id="naturalidade"
-                  value={formData.NATURALIDADE}
-                  onChange={(e) => handleChange('NATURALIDADE', e.target.value)}
+                  value={formData.naturalidade || ''}
+                  onChange={(e) => handleChange('naturalidade', e.target.value)}
                 />
               </div>
             </div>
@@ -214,11 +199,11 @@ const ClienteForm: React.FC<ClienteFormProps> = ({
             <h3 className="font-medium">Endereço</h3>
             
             <div className="space-y-2">
-              <Label htmlFor="endereco_residencial">Endereço Residencial</Label>
+              <Label htmlFor="enderecoResidencial">Endereço Residencial</Label>
               <Input
-                id="endereco_residencial"
-                value={formData.ENDERECO_RESIDENCIAL}
-                onChange={(e) => handleChange('ENDERECO_RESIDENCIAL', e.target.value)}
+                id="enderecoResidencial"
+                value={formData.enderecoResidencial || ''}
+                onChange={(e) => handleChange('enderecoResidencial', e.target.value)}
               />
             </div>
 
@@ -227,8 +212,8 @@ const ClienteForm: React.FC<ClienteFormProps> = ({
                 <Label htmlFor="bairro">Bairro</Label>
                 <Input
                   id="bairro"
-                  value={formData.BAIRRO}
-                  onChange={(e) => handleChange('BAIRRO', e.target.value)}
+                  value={formData.bairro || ''}
+                  onChange={(e) => handleChange('bairro', e.target.value)}
                 />
               </div>
               
@@ -236,18 +221,18 @@ const ClienteForm: React.FC<ClienteFormProps> = ({
                 <Label htmlFor="cidade">Cidade</Label>
                 <Input
                   id="cidade"
-                  value={formData.CIDADE}
-                  onChange={(e) => handleChange('CIDADE', e.target.value)}
+                  value={formData.cidade || ''}
+                  onChange={(e) => handleChange('cidade', e.target.value)}
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="endereco_comercial">Endereço Comercial</Label>
+              <Label htmlFor="enderecoComercial">Endereço Comercial</Label>
               <Input
-                id="endereco_comercial"
-                value={formData.ENDERECO_COMERCIAL}
-                onChange={(e) => handleChange('ENDERECO_COMERCIAL', e.target.value)}
+                id="enderecoComercial"
+                value={formData.enderecoComercial || ''}
+                onChange={(e) => handleChange('enderecoComercial', e.target.value)}
               />
             </div>
           </div>

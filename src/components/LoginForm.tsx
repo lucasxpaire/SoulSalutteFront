@@ -51,7 +51,7 @@ const LoginForm: React.FC = () => {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="seu.email@exemplo.com"
+                  placeholder="Digite seu email"
                   required
                 />
               </div>
@@ -76,12 +76,6 @@ const LoginForm: React.FC = () => {
                 {isLoading ? 'Entrando...' : 'Entrar'}
               </Button>
             </form>
-            
-            <div className="mt-6 p-4 bg-secondary/20 rounded-lg">
-              <p className="text-sm text-muted-foreground text-center">
-                Demo: Use qualquer email e senha para entrar
-              </p>
-            </div>
           </CardContent>
         </Card>
       </div>

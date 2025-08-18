@@ -10,4 +10,5 @@ export { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarInset, Si
 export { Calendar } from './calendar';
 export { Toaster } from './sonner';
 export { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from './accordion';
+export { Textarea } from './textarea';
 export { cn } from './utils';

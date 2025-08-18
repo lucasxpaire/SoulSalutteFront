@@ -15,32 +15,6 @@ function Calendar({
   showOutsideDays = true,
   ...props
 }: CalendarProps) {
-  // Navbar customizado para os botões de navegação
-  const CustomNavbar = (navbarProps: any) => {
-    return (
-      <div className={navbarProps.className} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-        <button
-          type="button"
-          className={navbarProps.classNames?.nav_button + ' ' + navbarProps.classNames?.nav_button_previous}
-          onClick={navbarProps.onPrevious}
-          aria-label="Mês anterior"
-          disabled={navbarProps.previousMonth === undefined}
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </button>
-        <span className={navbarProps.classNames?.caption_label}>{navbarProps.label}</span>
-        <button
-          type="button"
-          className={navbarProps.classNames?.nav_button + ' ' + navbarProps.classNames?.nav_button_next}
-          onClick={navbarProps.onNext}
-          aria-label="Próximo mês"
-          disabled={navbarProps.nextMonth === undefined}
-        >
-          <ChevronRight className="h-4 w-4" />
-        </button>
-      </div>
-    );
-  };
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
@@ -59,8 +33,8 @@ function Calendar({
         nav_button_next: "absolute right-1",
         table: "w-full border-collapse space-y-1",
         head_row: "flex",
-        head_cell:
-          "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]",
+        head_cell: // Correção aplicada aqui
+          "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem] flex justify-center",
         row: "flex w-full mt-2",
         cell: "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
         day: cn(
@@ -79,7 +53,6 @@ function Calendar({
         day_hidden: "invisible",
         ...classNames,
       }}
-  // Removido o prop components, pois não é suportado na v9
       {...props}
     />
   );
