@@ -19,36 +19,53 @@ export interface AvaliacaoFisioterapeutica {
   id: number;
   clienteId: number;
   dataAvaliacao: string;
+  
+  // 2.0 AVALIAÇÃO
   diagnosticoClinico: string;
   diagnosticoFisioterapeutico: string;
   historiaClinica: string;
   queixaPrincipal: string;
   habitosVida: string;
-  hma: string;
-  hmp: string;
+  hma: string; // História da Moléstia Atual
+  hmp: string; // História da Moléstia Pregressa
   antecedentesPessoais: string;
   antecedentesFamiliares: string;
   tratamentosRealizados: string;
+
+  // 3.0 EXAME CLÍNICO/FÍSICO
+  // 3.1 Apresentação
   deambulando: boolean;
   deambulandoComApoio: boolean;
   cadeiraDeRodas: boolean;
   internado: boolean;
   orientado: boolean;
+  
+  // 3.2 Exames
   temExamesComplementares: boolean;
   examesComplementaresDescricao: string;
+
+  // 3.3 Medicamentos
   usaMedicamentos: boolean;
   medicamentosDescricao: string;
+
+  // 3.4 Cirurgias
   realizouCirurgia: boolean;
   cirurgiasDescricao: string;
+
+  // 3.5 Inspeção/Palpação
   inspecaoNormal: boolean;
   inspecaoEdema: boolean;
   inspecaoCicatrizacaoIncompleta: boolean;
   inspecaoEritemas: boolean;
   inspecaoOutros: boolean;
   inspecaoOutrosDescricao: string;
+
+  // 3.6, 3.7, 3.8
   semiologia: string;
   testesEspecificos: string;
   avaliacaoDor: number; // 0-10
+
+  // 4.0 PLANO TERAPÊUTICO
   objetivosTratamento: string;
   recursosTerapeuticos: string;
   planoTratamento: string;
@@ -69,51 +86,4 @@ export interface User {
   id: string;
   email: string;
   name: string;
-}
-
-// Tipos adicionais para melhor organização
-export interface EstadisticasDashboard {
-  clientesAtivos: number;
-  sessoesDia: number;
-  avaliacoesRealizadas: number;
-  proximasSessoes: number;
-}
-
-export interface FiltroAvaliacoes {
-  clienteId: string;
-  dataInicio: string;
-  dataFim: string;
-  status: 'all' | 'recente' | 'antigo';
-}
-
-export interface EventoCalendario {
-  id: string;
-  titulo: string;
-  inicio: Date;
-  fim: Date;
-  clienteId: string;
-  clienteNome: string;
-  tipo: 'sessao' | 'avaliacao';
-  status: 'AGENDADA' | 'CONCLUIDA' | 'CANCELADA';
-}
-
-export interface ConfiguracaoSistema {
-  nomeClinica: string;
-  endereco: string;
-  telefone: string;
-  email: string;
-  logo?: string;
-  horarioFuncionamento: {
-    segundaASexta: {
-      inicio: string;
-      fim: string;
-    };
-    sabado: {
-      inicio: string;
-      fim: string;
-    };
-    domingo: {
-      fechado: boolean;
-    };
-  };
 }

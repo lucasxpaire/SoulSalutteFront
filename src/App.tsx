@@ -6,12 +6,14 @@ import Dashboard from '@/components/Dashboard';
 import ClientesPage from '@/components/ClientesPage';
 import ClienteDetalhesPage from '@/components/ClienteDetalhesPage';
 import CalendarioPage from '@/components/CalendarioPage';
+import AvaliacoesPage from '@/components/AvaliacaoPage';
 import ClienteForm from '@/components/ClienteForm';
 import AvaliacaoForm from '@/components/AvaliacaoForm';
+import AvaliacaoDetalhesModal from '@/components/AvaliacaoDetalhesModal';
 import SessaoForm from '@/components/SessaoForm';
 import ConfirmationDialog from '@/components/ConfirmationDialog';
 import { Toaster } from '@/components/ui/sonner';
-import { Cliente, Sessao } from '@/types';
+import { Cliente, Sessao, AvaliacaoFisioterapeutica } from '@/types';
 import 'date-fns/locale/pt-BR';
 import { deleteCliente as apiDeleteCliente } from '@/services/api';
 import { toast } from 'sonner';
@@ -21,18 +23,23 @@ const AppContent: React.FC = () => {
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
-  
+
   // Modal states
   const [isClienteFormOpen, setIsClienteFormOpen] = useState(false);
   const [isAvaliacaoFormOpen, setIsAvaliacaoFormOpen] = useState(false);
   const [isSessaoFormOpen, setIsSessaoFormOpen] = useState(false);
   const [isConfirmDeleteDialogOpen, setIsConfirmDeleteDialogOpen] = useState(false);
-  
+  const [isAvaliacaoDetalhesOpen, setIsAvaliacaoDetalhesOpen] = useState(false);
+
   const [editingCliente, setEditingCliente] = useState<Cliente | undefined>(undefined);
   const [editingSessao, setEditingSessao] = useState<Sessao | undefined>(undefined);
   const [clienteToDelete, setClienteToDelete] = useState<Cliente | null>(null);
+  const [selectedAvaliacao, setSelectedAvaliacao] = useState<AvaliacaoFisioterapeutica | null>(null);
   const [avaliacaoClienteId, setAvaliacaoClienteId] = useState<number>(0);
   const [initialSessaoDate, setInitialSessaoDate] = useState<Date>(new Date());
+  
+  // 1. Estado para guardar a avaliação a ser editada
+  const [editingAvaliacao, setEditingAvaliacao] = useState<AvaliacaoFisioterapeutica | undefined>(undefined);
 
   const forceRefresh = () => setRefreshKey(prev => prev + 1);
 
@@ -67,7 +74,9 @@ const AppContent: React.FC = () => {
     setIsClienteFormOpen(false);
     setEditingCliente(undefined);
     forceRefresh();
-    if (!selectedCliente) {
+    if (selectedCliente) {
+      setSelectedCliente(prev => prev ? { ...prev, ...editingCliente } : null);
+    } else {
       setCurrentPage('clientes');
     }
   };
@@ -92,13 +101,27 @@ const AppContent: React.FC = () => {
   };
 
   const handleAddAvaliacao = (clienteId: number) => {
+    setEditingAvaliacao(undefined); // 2. Garante que o form abre para criar, não editar
     setAvaliacaoClienteId(clienteId);
     setIsAvaliacaoFormOpen(true);
   };
-  
+
+  // 3. Nova função para lidar com a edição da avaliação
+  const handleEditAvaliacao = (avaliacao: AvaliacaoFisioterapeutica) => {
+    setEditingAvaliacao(avaliacao);
+    setAvaliacaoClienteId(avaliacao.clienteId);
+    setIsAvaliacaoFormOpen(true);
+  };
+
   const handleSaveAvaliacao = () => {
     setIsAvaliacaoFormOpen(false);
+    setEditingAvaliacao(undefined); // 4. Limpa o estado após salvar
     forceRefresh();
+  };
+
+  const handleViewAvaliacao = (avaliacao: AvaliacaoFisioterapeutica) => {
+    setSelectedAvaliacao(avaliacao);
+    setIsAvaliacaoDetalhesOpen(true);
   };
 
   const handleAddSessao = (date: Date) => {
@@ -126,7 +149,7 @@ const AppContent: React.FC = () => {
     switch (currentPage) {
       case 'dashboard':
         return <Dashboard key={refreshKey} />;
-      
+
       case 'clientes':
         return (
           <ClientesPage
@@ -135,7 +158,7 @@ const AppContent: React.FC = () => {
             onAddCliente={handleAddCliente}
           />
         );
-      
+
       case 'cliente-detalhes':
         return selectedCliente ? (
           <ClienteDetalhesPage
@@ -145,21 +168,31 @@ const AppContent: React.FC = () => {
             onEdit={handleEditCliente}
             onDelete={handleDeleteCliente}
             onAddAvaliacao={handleAddAvaliacao}
+            onViewAvaliacao={handleViewAvaliacao}
+            onEditAvaliacao={handleEditAvaliacao} // 5. Passa a nova função como prop
           />
         ) : null;
-      
+
       case 'calendario':
         return <CalendarioPage key={refreshKey} onAddSessao={handleAddSessao} onEditSessao={handleEditSessao} />;
-      
+
+      case 'avaliacoes':
+        return <AvaliacoesPage />;
+
       default:
         return <Dashboard />;
     }
   };
 
+  const handleCloseAvaliacaoForm = () => {
+    setIsAvaliacaoFormOpen(false);
+    setEditingAvaliacao(undefined);
+  };
+
   return (
     <Layout currentPage={currentPage} onNavigate={handleNavigate}>
       {renderCurrentPage()}
-      
+
       <ClienteForm
         isOpen={isClienteFormOpen}
         onClose={() => setIsClienteFormOpen(false)}
@@ -169,9 +202,16 @@ const AppContent: React.FC = () => {
 
       <AvaliacaoForm
         isOpen={isAvaliacaoFormOpen}
-        onClose={() => setIsAvaliacaoFormOpen(false)}
+        onClose={handleCloseAvaliacaoForm} // 7. Limpa o estado ao fechar
         clienteId={avaliacaoClienteId}
+        avaliacao={editingAvaliacao} // 6. Passa a avaliação para o formulário
         onSave={handleSaveAvaliacao}
+      />
+
+      <AvaliacaoDetalhesModal
+        isOpen={isAvaliacaoDetalhesOpen}
+        onClose={() => setIsAvaliacaoDetalhesOpen(false)}
+        avaliacao={selectedAvaliacao}
       />
 
       <SessaoForm
@@ -189,7 +229,7 @@ const AppContent: React.FC = () => {
         title="Confirmar Exclusão"
         description={`Você tem certeza que deseja excluir o cliente "${clienteToDelete?.nome}"? Esta ação não pode ser desfeita.`}
       />
-      
+
       <Toaster />
     </Layout>
   );

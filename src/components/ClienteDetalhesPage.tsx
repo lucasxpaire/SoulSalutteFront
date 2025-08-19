@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Edit, Trash2, FilePlus, User, Mail, Phone, Cake, Briefcase, MapPin } from 'lucide-react';
 import { Cliente, AvaliacaoFisioterapeutica, Sessao } from '@/types';
-import { getAvaliacoesByCliente, getSessoesByClienteId } from '@/services/api'; 
+import { getAvaliacoesByCliente, getSessoesByClienteId } from '@/services/api';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -15,6 +15,8 @@ interface ClienteDetalhesPageProps {
   onEdit: (cliente: Cliente) => void;
   onDelete: (cliente: Cliente) => void;
   onAddAvaliacao: (clienteId: number) => void;
+  onViewAvaliacao: (avaliacao: AvaliacaoFisioterapeutica) => void;
+  onEditAvaliacao: (avaliacao: AvaliacaoFisioterapeutica) => void; // 1. Adicionada nova prop
 }
 
 const InfoCard: React.FC<{ icon: React.ElementType; label: string; value?: string | null }> = ({ icon: Icon, label, value }) => (
@@ -27,7 +29,7 @@ const InfoCard: React.FC<{ icon: React.ElementType; label: string; value?: strin
   </div>
 );
 
-const ClienteDetalhesPage: React.FC<ClienteDetalhesPageProps> = ({ cliente, onBack, onEdit, onDelete, onAddAvaliacao }) => {
+const ClienteDetalhesPage: React.FC<ClienteDetalhesPageProps> = ({ cliente, onBack, onEdit, onDelete, onAddAvaliacao, onViewAvaliacao, onEditAvaliacao }) => {
   const [avaliacoes, setAvaliacoes] = useState<AvaliacaoFisioterapeutica[]>([]);
   const [sessoes, setSessoes] = useState<Sessao[]>([]);
 
@@ -118,7 +120,14 @@ const ClienteDetalhesPage: React.FC<ClienteDetalhesPageProps> = ({ cliente, onBa
                     <p className="font-semibold">{format(new Date(ava.dataAvaliacao), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}</p>
                     <p className="text-sm text-muted-foreground">{ava.diagnosticoFisioterapeutico}</p>
                   </div>
-                  <Button variant="outline" size="sm">Ver Detalhes</Button>
+                  {/* 2. Adicionado um contêiner para os botões e o novo botão Editar */}
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" onClick={() => onViewAvaliacao(ava)}>Ver Detalhes</Button>
+                    <Button variant="outline" size="sm" onClick={() => onEditAvaliacao(ava)}>
+                      <Edit className="w-3 h-3 mr-1.5" />
+                      Editar
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>

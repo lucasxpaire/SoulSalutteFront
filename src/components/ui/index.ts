@@ -11,4 +11,5 @@ export { Calendar } from './calendar';
 export { Toaster } from './sonner';
 export { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from './accordion';
 export { Textarea } from './textarea';
+export { Checkbox } from './checkbox';
 export { cn } from './utils';
