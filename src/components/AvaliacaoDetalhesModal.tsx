@@ -1,15 +1,20 @@
-import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { AvaliacaoFisioterapeutica } from '@/types';
+import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { AvaliacaoFisioterapeutica, Evolucao } from '@/types';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Badge } from './ui/badge';
-import { CheckCircle2, XCircle } from 'lucide-react';
+import { CheckCircle2, XCircle, PlusCircle } from 'lucide-react';
+import { Button } from './ui/button';
+import { Textarea } from './ui/textarea';
+import { toast } from 'sonner';
+import { adicionarEvolucao } from '@/services/api';
 
 interface AvaliacaoDetalhesModalProps {
   isOpen: boolean;
   onClose: () => void;
   avaliacao: AvaliacaoFisioterapeutica | null;
+  onUpdate: () => void;
 }
 
 const DetailItem: React.FC<{ label: string; value?: string | number | null }> = ({ label, value }) => (
@@ -27,7 +32,36 @@ const CheckboxDetail: React.FC<{ label: string; checked: boolean; }> = ({ label,
 );
 
 
-const AvaliacaoDetalhesModal: React.FC<AvaliacaoDetalhesModalProps> = ({ isOpen, onClose, avaliacao }) => {
+const AvaliacaoDetalhesModal: React.FC<AvaliacaoDetalhesModalProps> = ({ isOpen, onClose, avaliacao: initialAvaliacao, onUpdate }) => {
+  const [avaliacao, setAvaliacao] = useState<AvaliacaoFisioterapeutica | null>(initialAvaliacao);
+  const [novaEvolucao, setNovaEvolucao] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  React.useEffect(() => {
+    setAvaliacao(initialAvaliacao);
+    setNovaEvolucao(''); // Limpa o campo ao abrir/trocar de avaliação
+  }, [initialAvaliacao, isOpen]);
+
+  const handleAdicionarEvolucao = async () => {
+    if (!avaliacao || !novaEvolucao.trim()) {
+      toast.warning("O campo de evolução não pode estar vazio.");
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      // A API retorna a avaliação completa e atualizada
+      const avaliacaoAtualizada = await adicionarEvolucao(avaliacao.id, novaEvolucao);
+      setAvaliacao(avaliacaoAtualizada); // Atualiza o estado local para refletir a nova evolução imediatamente
+      setNovaEvolucao('');
+      toast.success("Evolução adicionada com sucesso!");
+      onUpdate(); // Chama a função para atualizar a lista na página de detalhes do cliente
+    } catch (error) {
+      toast.error("Falha ao adicionar evolução.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   if (!avaliacao) return null;
 
   return (
@@ -100,11 +134,46 @@ const AvaliacaoDetalhesModal: React.FC<AvaliacaoDetalhesModalProps> = ({ isOpen,
               <DetailItem label="4.1 Objetivos de Tratamento" value={avaliacao.objetivosTratamento} />
               <DetailItem label="4.2 Recursos Terapêuticos" value={avaliacao.recursosTerapeuticos} />
               <DetailItem label="4.3 Plano de Tratamento" value={avaliacao.planoTratamento} />
-              <DetailItem label="4.4 Evolução" value={avaliacao.evolucao} />
             </div>
           </div>
 
+{/* Seção de Evolução - MODIFICADA */}
+          <div className="space-y-2">
+            <h3 className="font-bold text-lg text-primary border-b pb-1">4.4 Evolução</h3>
+            <div className="p-4 space-y-4">
+              {/* Formulário para adicionar nova evolução */}
+              <div className="space-y-2">
+                <Textarea 
+                  placeholder="Adicionar nova evolução..."
+                  value={novaEvolucao}
+                  onChange={(e) => setNovaEvolucao(e.target.value)}
+                />
+                <Button onClick={handleAdicionarEvolucao} disabled={isSubmitting} size="sm">
+                  <PlusCircle className="w-4 h-4 mr-2" />
+                  {isSubmitting ? 'A Adicionar...' : 'Adicionar Evolução'}
+                </Button>
+              </div>
+              {/* Lista de evoluções existentes */}
+              <div className="space-y-3 max-h-48 overflow-y-auto">
+                {avaliacao.evolucoes && avaliacao.evolucoes.length > 0 ? (
+                  avaliacao.evolucoes.map((evo: Evolucao) => (
+                    <div key={evo.id} className="p-3 border rounded-md bg-muted/50">
+                      <p className="text-xs font-semibold text-muted-foreground mb-1">
+                        {format(new Date(evo.dataEvolucao), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                      </p>
+                      <p className="text-sm whitespace-pre-wrap">{evo.evolucao}</p>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-center text-muted-foreground py-4">Nenhuma evolução registrada.</p>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
+        <DialogFooter>
+            <Button variant="outline" onClick={onClose}>Fechar</Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

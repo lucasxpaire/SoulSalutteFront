@@ -15,6 +15,12 @@ export interface Cliente {
   estadoCivil: 'Solteiro' | 'Casado' | 'Divorciado' | 'Viúvo' | 'União Estável';
 }
 
+export interface Evolucao {
+  id: number;
+  evolucao: string;
+  dataEvolucao: string;
+}
+
 export interface AvaliacaoFisioterapeutica {
   id: number;
   clienteId: number;
@@ -69,7 +75,10 @@ export interface AvaliacaoFisioterapeutica {
   objetivosTratamento: string;
   recursosTerapeuticos: string;
   planoTratamento: string;
-  evolucao: string;
+
+  evolucoes: Evolucao[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Sessao {

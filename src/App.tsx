@@ -38,7 +38,6 @@ const AppContent: React.FC = () => {
   const [avaliacaoClienteId, setAvaliacaoClienteId] = useState<number>(0);
   const [initialSessaoDate, setInitialSessaoDate] = useState<Date>(new Date());
   
-  // 1. Estado para guardar a avaliação a ser editada
   const [editingAvaliacao, setEditingAvaliacao] = useState<AvaliacaoFisioterapeutica | undefined>(undefined);
 
   const forceRefresh = () => setRefreshKey(prev => prev + 1);
@@ -212,6 +211,9 @@ const AppContent: React.FC = () => {
         isOpen={isAvaliacaoDetalhesOpen}
         onClose={() => setIsAvaliacaoDetalhesOpen(false)}
         avaliacao={selectedAvaliacao}
+        onUpdate={() => {
+          forceRefresh();
+        }}
       />
 
       <SessaoForm

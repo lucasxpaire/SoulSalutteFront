@@ -63,4 +63,13 @@ export const updateAvaliacao = (id: number, avaliacao: Partial<AvaliacaoFisioter
     return apiClient.put(`/avaliacoes/${id}`, avaliacao).then(res => res.data);
 };
 
+export const deleteAvaliacao = (id: number): Promise<void> => {
+    return apiClient.delete(`/avaliacoes/${id}`);
+};
+
+export const adicionarEvolucao = (avaliacaoId: number, texto: string): Promise<AvaliacaoFisioterapeutica> => {
+    return apiClient.post(`/avaliacoes/${avaliacaoId}/evolucoes`, { evolucao: texto }).then(res => res.data);
+};
+
+
 export default apiClient;
