@@ -108,11 +108,20 @@ const AvaliacaoForm: React.FC<AvaliacaoFormProps> = ({ isOpen, onClose, clienteI
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      // Copia os dados para um novo objeto para não alterar o estado diretamente
+      const dataToSend = { ...formData };
+
+      // Verifica se a data da avaliação existe e não contém a letra 'T' (indicando que já tem horário)
+      if (dataToSend.dataAvaliacao && !dataToSend.dataAvaliacao.includes('T')) {
+        // Adiciona um horário padrão para ser compatível com o LocalDateTime do backend
+        dataToSend.dataAvaliacao = `${dataToSend.dataAvaliacao}T00:00:00`;
+      }
+
       if (avaliacao && avaliacao.id) {
-        await updateAvaliacao(avaliacao.id, formData as AvaliacaoFisioterapeutica);
+        await updateAvaliacao(avaliacao.id, dataToSend as AvaliacaoFisioterapeutica);
         toast.success('Avaliação atualizada com sucesso!');
       } else {
-        await createAvaliacao(formData as Omit<AvaliacaoFisioterapeutica, 'id'>);
+        await createAvaliacao(dataToSend as Omit<AvaliacaoFisioterapeutica, 'id'>);
         toast.success('Avaliação criada com sucesso!');
       }
       onSave();
