@@ -4,10 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Edit, Trash2, FilePlus, User, Mail, Phone, Cake, Briefcase, MapPin } from 'lucide-react';
 import { Cliente, AvaliacaoFisioterapeutica, Sessao } from '@/types';
-import { getAvaliacoesByCliente, getSessoesByClienteId } from '@/services/api';
+import { getAvaliacoesByCliente, getSessoesByClienteId, deleteAvaliacao } from '@/services/api';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
+import ConfirmationDialog  from './ConfirmationDialog';
 
 interface ClienteDetalhesPageProps {
   cliente: Cliente;
@@ -16,7 +17,7 @@ interface ClienteDetalhesPageProps {
   onDelete: (cliente: Cliente) => void;
   onAddAvaliacao: (clienteId: number) => void;
   onViewAvaliacao: (avaliacao: AvaliacaoFisioterapeutica) => void;
-  onEditAvaliacao: (avaliacao: AvaliacaoFisioterapeutica) => void; // 1. Adicionada nova prop
+  onEditAvaliacao: (avaliacao: AvaliacaoFisioterapeutica) => void;
 }
 
 const InfoCard: React.FC<{ icon: React.ElementType; label: string; value?: string | null }> = ({ icon: Icon, label, value }) => (
@@ -32,6 +33,18 @@ const InfoCard: React.FC<{ icon: React.ElementType; label: string; value?: strin
 const ClienteDetalhesPage: React.FC<ClienteDetalhesPageProps> = ({ cliente, onBack, onEdit, onDelete, onAddAvaliacao, onViewAvaliacao, onEditAvaliacao }) => {
   const [avaliacoes, setAvaliacoes] = useState<AvaliacaoFisioterapeutica[]>([]);
   const [sessoes, setSessoes] = useState<Sessao[]>([]);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [avaliacaoToDelete, setAvaliacaoToDelete] = useState<AvaliacaoFisioterapeutica | null>(null);
+
+  const fetchAvaliacoes = async () => {
+    try {
+      const avaliacoesData = await getAvaliacoesByCliente(cliente.id);
+      setAvaliacoes(avaliacoesData);
+    } catch (error) {
+      toast.error('Erro ao recarregar as avaliações.');
+      console.error(error);
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -50,6 +63,26 @@ const ClienteDetalhesPage: React.FC<ClienteDetalhesPageProps> = ({ cliente, onBa
     fetchData();
   }, [cliente.id]);
 
+  const handleDeleteClick = (avaliacao: AvaliacaoFisioterapeutica) => {
+    setAvaliacaoToDelete(avaliacao);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!avaliacaoToDelete) return;
+    try {
+      await deleteAvaliacao(avaliacaoToDelete.id);
+      toast.success("Avaliação excluída com sucesso!");
+      fetchAvaliacoes(); 
+    } catch (error) {
+      toast.error("Falha ao excluir a avaliação.");
+      console.error(error);
+    } finally {
+      setIsDeleteDialogOpen(false);
+      setAvaliacaoToDelete(null);
+    }
+  };
+
   const calcularIdade = (dataNascimento: string) => {
     if (!dataNascimento) return '';
     const hoje = new Date();
@@ -60,6 +93,10 @@ const ClienteDetalhesPage: React.FC<ClienteDetalhesPageProps> = ({ cliente, onBa
       idade--;
     }
     return `${idade} anos`;
+  };
+
+  const parseDateAsUTC = (dateString: string) => {
+    return new Date(dateString + 'Z');
   };
 
   return (
@@ -117,15 +154,22 @@ const ClienteDetalhesPage: React.FC<ClienteDetalhesPageProps> = ({ cliente, onBa
               {avaliacoes.map(ava => (
                 <div key={ava.id} className="flex justify-between items-center p-3 border rounded-lg">
                   <div>
-                    <p className="font-semibold">{format(new Date(ava.dataAvaliacao), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}</p>
-                    <p className="text-sm text-muted-foreground">{ava.diagnosticoFisioterapeutico}</p>
+                    <p className="font-semibold">{format(parseDateAsUTC(ava.dataAvaliacao), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR })}</p>
+                    {ava.updatedAt && ava.createdAt && ava.updatedAt !== ava.createdAt && (
+                        <p className="text-xs text-muted-foreground italic">
+                            (Atualizado em: {format(new Date(ava.updatedAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })})
+                        </p>
+                    )}
                   </div>
-                  {/* 2. Adicionado um contêiner para os botões e o novo botão Editar */}
                   <div className="flex items-center gap-2">
                     <Button variant="outline" size="sm" onClick={() => onViewAvaliacao(ava)}>Ver Detalhes</Button>
                     <Button variant="outline" size="sm" onClick={() => onEditAvaliacao(ava)}>
                       <Edit className="w-3 h-3 mr-1.5" />
                       Editar
+                    </Button>
+                    <Button variant="destructive" size="sm" onClick={() => handleDeleteClick(ava)}>
+                      <Trash2 className="w-3 h-3 mr-1.5" />
+                      Excluir
                     </Button>
                   </div>
                 </div>
@@ -136,21 +180,21 @@ const ClienteDetalhesPage: React.FC<ClienteDetalhesPageProps> = ({ cliente, onBa
           )}
         </CardContent>
       </Card>
-      
-       {/* Sessões */}
+
+      {/* Sessões */}
       <Card>
         <CardHeader>
           <CardTitle>Histórico de Sessões</CardTitle>
         </CardHeader>
         <CardContent>
-           {sessoes.length > 0 ? (
+          {sessoes.length > 0 ? (
             <div className="space-y-3">
               {sessoes.map(sessao => (
                 <div key={sessao.id} className="flex justify-between items-center p-3 border rounded-lg">
                   <div>
                     <p className="font-semibold">{sessao.nome}</p>
                     <p className="text-sm text-muted-foreground">
-                      {format(new Date(sessao.dataHoraInicio), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                      {format(parseDateAsUTC(sessao.dataHoraInicio), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                     </p>
                   </div>
                   <Badge>{sessao.status}</Badge>
@@ -162,6 +206,18 @@ const ClienteDetalhesPage: React.FC<ClienteDetalhesPageProps> = ({ cliente, onBa
           )}
         </CardContent>
       </Card>
+
+      <ConfirmationDialog
+        isOpen={isDeleteDialogOpen}
+        onClose={() => setIsDeleteDialogOpen(false)}
+        onConfirm={handleConfirmDelete}
+        title="Excluir Avaliação"
+        description={`Você tem certeza que deseja excluir a avaliação de ${
+          avaliacaoToDelete
+            ? format(parseDateAsUTC(avaliacaoToDelete.dataAvaliacao), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })
+            : ""
+        }? Esta ação não pode ser desfeita.`}
+      />
     </div>
   );
 };

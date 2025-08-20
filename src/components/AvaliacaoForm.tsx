@@ -18,7 +18,6 @@ interface AvaliacaoFormProps {
   onSave: () => void;
 }
 
-// O campo 'evolucao' foi removido do estado inicial
 const initialFormData: Omit<AvaliacaoFisioterapeutica, 'id' | 'clienteId' | 'dataAvaliacao' | 'createdAt' | 'updatedAt'> = {
     diagnosticoClinico: '',
     diagnosticoFisioterapeutico: '',
@@ -56,7 +55,6 @@ const initialFormData: Omit<AvaliacaoFisioterapeutica, 'id' | 'clienteId' | 'dat
     evolucoes: [],
 };
 
-// Seus componentes auxiliares (FormSection, etc.) permanecem exatamente iguais
 const FormSection: React.FC<{ title: string; icon: React.ElementType; children: React.ReactNode }> = ({ title, icon: Icon, children }) => (
     <div className="space-y-4">
         <h3 className="flex items-center text-lg font-semibold text-primary border-b border-primary/20 pb-2 mb-4">
@@ -123,10 +121,13 @@ const AvaliacaoForm: React.FC<AvaliacaoFormProps> = ({ isOpen, onClose, clienteI
   const [isSubmittingEvolucao, setIsSubmittingEvolucao] = useState(false);
 
   useEffect(() => {
-    if (avaliacao) {
-      setFormData(avaliacao);
-    } else {
-      setFormData({ ...initialFormData, clienteId });
+    if (isOpen) {
+        if (avaliacao) {
+            setFormData(avaliacao);
+        } else {
+            setFormData({ ...initialFormData, clienteId });
+        }
+        setNovaEvolucao('');
     }
   }, [avaliacao, clienteId, isOpen]);
 
@@ -207,15 +208,15 @@ const AvaliacaoForm: React.FC<AvaliacaoFormProps> = ({ isOpen, onClose, clienteI
             <FormSection title="Diagnóstico" icon={FileText}>
                <div className="space-y-2">
                     <Label htmlFor="diagnosticoClinico">Diagnóstico Clínico</Label>
-                    <Textarea id="diagnosticoClinico" value={formData.diagnosticoClinico || ''} onChange={e => handleChange('diagnosticoClinico', e.target.value)} placeholder="Ex: Hérnia de disco L4-L5..." className="bg-muted/50"/>
+                    <Textarea id="diagnosticoClinico" value={formData.diagnosticoClinico || ''} onChange={e => handleChange('diagnosticoClinico', e.target.value)} className="bg-muted/50"/>
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="diagnosticoFisioterapeutico">Diagnóstico Fisioterapêutico</Label>
-                    <Textarea id="diagnosticoFisioterapeutico" value={formData.diagnosticoFisioterapeutico || ''} onChange={e => handleChange('diagnosticoFisioterapeutico', e.target.value)} placeholder="Ex: Lombociatalgia à direita por compressão nervosa..." className="bg-muted/50"/>
+                    <Textarea id="diagnosticoFisioterapeutico" value={formData.diagnosticoFisioterapeutico || ''} onChange={e => handleChange('diagnosticoFisioterapeutico', e.target.value)} className="bg-muted/50"/>
                 </div>
             </FormSection>
 
-            <FormSection title="Anamnese" icon={Stethoscope}>
+            <FormSection title="Avaliação" icon={Stethoscope}>
                 <div className="space-y-4">
                     <div className="space-y-2">
                         <Label htmlFor="queixaPrincipal">Queixa Principal do Paciente</Label>
@@ -230,11 +231,11 @@ const AvaliacaoForm: React.FC<AvaliacaoFormProps> = ({ isOpen, onClose, clienteI
                         <Textarea id="habitosVida" value={formData.habitosVida || ''} onChange={e => handleChange('habitosVida', e.target.value)} className="bg-muted/50"/>
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="hma">HMA (História da Moléstia Atual)</Label>
+                        <Label htmlFor="hma">HMA</Label>
                         <Textarea id="hma" value={formData.hma || ''} onChange={e => handleChange('hma', e.target.value)} className="bg-muted/50"/>
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="hmp">HMP (História da Moléstia Pregressa)</Label>
+                        <Label htmlFor="hmp">HMP</Label>
                         <Textarea id="hmp" value={formData.hmp || ''} onChange={e => handleChange('hmp', e.target.value)} className="bg-muted/50"/>
                     </div>
                     <div className="space-y-2">
@@ -327,7 +328,7 @@ const AvaliacaoForm: React.FC<AvaliacaoFormProps> = ({ isOpen, onClose, clienteI
                 <div className="mt-6 space-y-4 max-h-64 overflow-y-auto pr-2 border-t pt-4">
                     {formData.evolucoes && formData.evolucoes.length > 0 ? (
                         [...formData.evolucoes].sort((a, b) => new Date(b.dataEvolucao).getTime() - new Date(a.dataEvolucao).getTime()).map((evolucao, index) => (
-                            <div key={evolucao.id || `temp-${index}`} className="p-3 rounded-lg border bg-background text-sm">
+                            <div key={evolucao.id || `temp-${index}`} className="p-3 rounded-lg border bg-muted/50 text-sm">
                                 <p className="font-semibold text-muted-foreground text-xs pb-1">
                                     Registado em: {formatDate(evolucao.dataEvolucao)}
                                 </p>
