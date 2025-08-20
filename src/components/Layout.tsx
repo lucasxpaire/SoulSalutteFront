@@ -8,18 +8,15 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
-  SidebarTrigger,
-  SidebarInset
+  SidebarInset,
 } from '@/components/ui/sidebar';
-import { Button } from '@/components/ui/button';
 import { 
   LayoutDashboard, 
   Users, 
   Calendar, 
-  FileText, 
   Settings, 
   LogOut,
-  Heart
+  Heart,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -37,41 +34,32 @@ const Layout: React.FC<LayoutProps> = ({ children, currentPage, onNavigate }) =>
       id: 'dashboard',
       title: 'Dashboard',
       icon: LayoutDashboard,
-      description: 'Visão geral do sistema'
     },
     {
       id: 'clientes',
       title: 'Clientes',
       icon: Users,
-      description: 'Gerenciar pacientes'
     },
     {
       id: 'calendario',
       title: 'Calendário',
       icon: Calendar,
-      description: 'Agendamentos'
-    },
-    {
-      id: 'avaliacoes',
-      title: 'Avaliações',
-      icon: FileText,
-      description: 'Fichas fisioterapêuticas'
     }
   ];
 
   return (
     <SidebarProvider>
-      <Sidebar variant="inset">
+      <Sidebar>
         <SidebarHeader>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton size="lg" className="data-[state=open]:bg-primary data-[state=open]:text-primary-foreground">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                  <Heart className="size-4" />
+              <SidebarMenuButton className="justify-start">
+                <div className="flex aspect-square size-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                  <Heart className="size-5" />
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">Soul Saluttē</span>
-                  <span className="truncate text-xs">Fisioterapia</span>
+                  <span className="truncate font-semibold text-lg">Soul Saluttē</span>
+                  <span className="truncate text-xs text-muted-foreground">Fisioterapia</span>
                 </div>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -81,19 +69,14 @@ const Layout: React.FC<LayoutProps> = ({ children, currentPage, onNavigate }) =>
         <SidebarContent>
           <SidebarMenu>
             {menuItems.map((item) => (
-              <SidebarMenuItem key={item.id}>
+              <SidebarMenuItem key={item.id} tooltip={item.title}>
                 <SidebarMenuButton 
                   onClick={() => onNavigate(item.id)}
                   isActive={currentPage === item.id}
                   className="h-12"
                 >
-                  <item.icon className="size-4" />
-                  <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-medium">{item.title}</span>
-                    <span className="truncate text-xs text-muted-foreground">
-                      {item.description}
-                    </span>
-                  </div>
+                  <item.icon className="size-5" />
+                  <span className="truncate font-medium">{item.title}</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             ))}
@@ -102,10 +85,25 @@ const Layout: React.FC<LayoutProps> = ({ children, currentPage, onNavigate }) =>
         
         <SidebarFooter>
           <SidebarMenu>
-            <SidebarMenuItem>
+            <SidebarMenuItem tooltip="Configurações">
               <SidebarMenuButton className="h-12">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-secondary text-secondary-foreground">
-                  <span className="text-sm font-medium">
+                <Settings className="size-5" />
+                <span>Configurações</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem tooltip="Sair">
+              <SidebarMenuButton onClick={logout} className="h-12 text-red-500 hover:bg-red-500/10 hover:text-red-600">
+                <LogOut className="size-5" />
+                <span>Sair</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <div className="w-full border-t border-sidebar-border my-2" />
+            </SidebarMenuItem>
+            <SidebarMenuItem tooltip={user?.name || 'Usuário'}>
+              <SidebarMenuButton className="h-14">
+                <div className="flex aspect-square size-10 items-center justify-center rounded-lg bg-secondary text-secondary-foreground">
+                  <span className="text-lg font-medium">
                     {user?.name?.charAt(0) || 'U'}
                   </span>
                 </div>
@@ -117,28 +115,18 @@ const Layout: React.FC<LayoutProps> = ({ children, currentPage, onNavigate }) =>
                 </div>
               </SidebarMenuButton>
             </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton onClick={logout} className="text-red-600 hover:bg-red-50">
-                <LogOut className="size-4" />
-                <span>Sair</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
           </SidebarMenu>
         </SidebarFooter>
       </Sidebar>
       
       <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
-          <div className="flex items-center gap-2 px-4">
-            <SidebarTrigger className="-ml-1" />
-            <div className="h-4 w-px bg-sidebar-border" />
+        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
             <div className="text-sm font-medium capitalize">
               {menuItems.find(item => item.id === currentPage)?.title || 'Soul Saluttē'}
             </div>
-          </div>
         </header>
         
-        <main className="flex flex-1 flex-col gap-4 p-0">
+        <main className="flex-1 overflow-auto">
           {children}
         </main>
       </SidebarInset>

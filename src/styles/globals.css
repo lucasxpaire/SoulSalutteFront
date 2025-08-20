@@ -235,3 +235,30 @@ html {
 .transition-smooth {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+.bg-login {
+  background-color: var(--primary);
+}
+
+/* Estilos específicos do calendário */
+*:focus:not(ol) {
+  @apply outline-none ring-2 ring-primary border-primary;
+}
+
+select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  text-indent: 1px;
+  text-overflow: '';
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}

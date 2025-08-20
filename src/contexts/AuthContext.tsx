@@ -37,7 +37,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const mockUser: User = {
         id: '1',
         email: email,
-        name: 'Dr. Soul Saluttē'
+        name: 'Dra. Lauren'
       };
       setUser(mockUser);
       setIsLoading(false);

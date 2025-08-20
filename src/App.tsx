@@ -37,6 +37,7 @@ const AppContent: React.FC = () => {
   const [selectedAvaliacao, setSelectedAvaliacao] = useState<AvaliacaoFisioterapeutica | null>(null);
   const [avaliacaoClienteId, setAvaliacaoClienteId] = useState<number>(0);
   const [initialSessaoDate, setInitialSessaoDate] = useState<Date>(new Date());
+  const [initialClienteId, setInitialClienteId] = useState<number | undefined>(undefined); // Novo estado
   
   const [editingAvaliacao, setEditingAvaliacao] = useState<AvaliacaoFisioterapeutica | undefined>(undefined);
 
@@ -74,7 +75,10 @@ const AppContent: React.FC = () => {
     setEditingCliente(undefined);
     forceRefresh();
     if (selectedCliente) {
-      setSelectedCliente(prev => prev ? { ...prev, ...editingCliente } : null);
+      // Atualiza os dados do cliente selecionado se ele estiver sendo editado
+      if (editingCliente && selectedCliente.id === editingCliente.id) {
+          setSelectedCliente(editingCliente);
+      }
     } else {
       setCurrentPage('clientes');
     }
@@ -100,12 +104,11 @@ const AppContent: React.FC = () => {
   };
 
   const handleAddAvaliacao = (clienteId: number) => {
-    setEditingAvaliacao(undefined); // 2. Garante que o form abre para criar, não editar
+    setEditingAvaliacao(undefined);
     setAvaliacaoClienteId(clienteId);
     setIsAvaliacaoFormOpen(true);
   };
 
-  // 3. Nova função para lidar com a edição da avaliação
   const handleEditAvaliacao = (avaliacao: AvaliacaoFisioterapeutica) => {
     setEditingAvaliacao(avaliacao);
     setAvaliacaoClienteId(avaliacao.clienteId);
@@ -114,7 +117,7 @@ const AppContent: React.FC = () => {
 
   const handleSaveAvaliacao = () => {
     setIsAvaliacaoFormOpen(false);
-    setEditingAvaliacao(undefined); // 4. Limpa o estado após salvar
+    setEditingAvaliacao(undefined);
     forceRefresh();
   };
 
@@ -123,20 +126,24 @@ const AppContent: React.FC = () => {
     setIsAvaliacaoDetalhesOpen(true);
   };
 
-  const handleAddSessao = (date: Date) => {
+  // Função modificada para aceitar um clienteId opcional
+  const handleAddSessao = (date: Date, clienteId?: number) => {
     setEditingSessao(undefined);
     setInitialSessaoDate(date);
+    setInitialClienteId(clienteId); // Define o cliente inicial
     setIsSessaoFormOpen(true);
   };
 
   const handleEditSessao = (sessao: Sessao) => {
     setEditingSessao(sessao);
+    setInitialClienteId(sessao.clienteId);
     setIsSessaoFormOpen(true);
   };
 
   const handleSaveSessao = () => {
     setIsSessaoFormOpen(false);
     setEditingSessao(undefined);
+    setInitialClienteId(undefined); // Limpa o cliente inicial
     forceRefresh();
   };
 
@@ -147,7 +154,7 @@ const AppContent: React.FC = () => {
   const renderCurrentPage = () => {
     switch (currentPage) {
       case 'dashboard':
-        return <Dashboard key={refreshKey} />;
+        return <Dashboard key={refreshKey} onAddSessao={() => handleAddSessao(new Date())} />;
 
       case 'clientes':
         return (
@@ -168,7 +175,8 @@ const AppContent: React.FC = () => {
             onDelete={handleDeleteCliente}
             onAddAvaliacao={handleAddAvaliacao}
             onViewAvaliacao={handleViewAvaliacao}
-            onEditAvaliacao={handleEditAvaliacao} // 5. Passa a nova função como prop
+            onEditAvaliacao={handleEditAvaliacao}
+            onAddSessao={(clienteId) => handleAddSessao(new Date(), clienteId)} // Passa o clienteId
           />
         ) : null;
 
@@ -179,7 +187,7 @@ const AppContent: React.FC = () => {
         return <AvaliacoesPage />;
 
       default:
-        return <Dashboard />;
+        return <Dashboard onAddSessao={() => handleAddSessao(new Date())} />;
     }
   };
 
@@ -201,9 +209,9 @@ const AppContent: React.FC = () => {
 
       <AvaliacaoForm
         isOpen={isAvaliacaoFormOpen}
-        onClose={handleCloseAvaliacaoForm} // 7. Limpa o estado ao fechar
+        onClose={handleCloseAvaliacaoForm}
         clienteId={avaliacaoClienteId}
-        avaliacao={editingAvaliacao} // 6. Passa a avaliação para o formulário
+        avaliacao={editingAvaliacao}
         onSave={handleSaveAvaliacao}
       />
 
@@ -211,16 +219,14 @@ const AppContent: React.FC = () => {
         isOpen={isAvaliacaoDetalhesOpen}
         onClose={() => setIsAvaliacaoDetalhesOpen(false)}
         avaliacao={selectedAvaliacao}
-        onUpdate={() => {
-          forceRefresh();
-        }}
       />
 
       <SessaoForm
         isOpen={isSessaoFormOpen}
         onClose={() => setIsSessaoFormOpen(false)}
-        {...(editingSessao && { sessao: editingSessao })}
+        sessao={editingSessao}
         initialDate={initialSessaoDate}
+        initialClienteId={initialClienteId} // Passa o clienteId para o form
         onSave={handleSaveSessao}
       />
 

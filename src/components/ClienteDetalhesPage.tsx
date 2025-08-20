@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Edit, Trash2, FilePlus, User, Mail, Phone, Cake, Briefcase, MapPin } from 'lucide-react';
+import { ArrowLeft, Edit, Trash2, FilePlus, User, Mail, Phone, Cake, Briefcase, MapPin, CalendarPlus } from 'lucide-react';
 import { Cliente, AvaliacaoFisioterapeutica, Sessao } from '@/types';
 import { getAvaliacoesByCliente, getSessoesByClienteId, deleteAvaliacao } from '@/services/api';
 import { format } from 'date-fns';
@@ -18,6 +18,7 @@ interface ClienteDetalhesPageProps {
   onAddAvaliacao: (clienteId: number) => void;
   onViewAvaliacao: (avaliacao: AvaliacaoFisioterapeutica) => void;
   onEditAvaliacao: (avaliacao: AvaliacaoFisioterapeutica) => void;
+  onAddSessao: (clienteId: number) => void; // Nova propriedade
 }
 
 const InfoCard: React.FC<{ icon: React.ElementType; label: string; value?: string | null }> = ({ icon: Icon, label, value }) => (
@@ -30,7 +31,7 @@ const InfoCard: React.FC<{ icon: React.ElementType; label: string; value?: strin
   </div>
 );
 
-const ClienteDetalhesPage: React.FC<ClienteDetalhesPageProps> = ({ cliente, onBack, onEdit, onDelete, onAddAvaliacao, onViewAvaliacao, onEditAvaliacao }) => {
+const ClienteDetalhesPage: React.FC<ClienteDetalhesPageProps> = ({ cliente, onBack, onEdit, onDelete, onAddAvaliacao, onViewAvaliacao, onEditAvaliacao, onAddSessao }) => {
   const [avaliacoes, setAvaliacoes] = useState<AvaliacaoFisioterapeutica[]>([]);
   const [sessoes, setSessoes] = useState<Sessao[]>([]);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -102,7 +103,7 @@ const ClienteDetalhesPage: React.FC<ClienteDetalhesPageProps> = ({ cliente, onBa
   return (
     <div className="p-6 space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center flex-wrap gap-4">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={onBack}>
             <ArrowLeft className="w-5 h-5" />
@@ -113,6 +114,10 @@ const ClienteDetalhesPage: React.FC<ClienteDetalhesPageProps> = ({ cliente, onBa
           </div>
         </div>
         <div className="flex gap-2">
+           <Button variant="outline" onClick={() => onAddSessao(cliente.id)}>
+              <CalendarPlus className="w-4 h-4 mr-2" />
+              Nova Sessão
+          </Button>
           <Button variant="outline" onClick={() => onEdit(cliente)}>
             <Edit className="w-4 h-4 mr-2" />
             Editar
