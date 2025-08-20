@@ -1,178 +1,171 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { AvaliacaoFisioterapeutica, Evolucao } from '@/types';
+import { Button } from '@/components/ui/button';
+import { AvaliacaoFisioterapeutica } from '@/types';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Badge } from './ui/badge';
-import { CheckCircle2, XCircle, PlusCircle } from 'lucide-react';
-import { Button } from './ui/button';
-import { Textarea } from './ui/textarea';
-import { toast } from 'sonner';
-import { adicionarEvolucao } from '@/services/api';
+import { Stethoscope, Activity, Clipboard, Thermometer, FileText, History, CheckCircle2, XCircle, ShieldQuestion } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 interface AvaliacaoDetalhesModalProps {
   isOpen: boolean;
   onClose: () => void;
   avaliacao: AvaliacaoFisioterapeutica | null;
-  onUpdate: () => void;
 }
 
-const DetailItem: React.FC<{ label: string; value?: string | number | null }> = ({ label, value }) => (
-  <div className="mb-4">
-    <p className="text-sm font-semibold text-muted-foreground">{label}</p>
-    <p className="text-base text-foreground whitespace-pre-wrap">{value || 'Não informado'}</p>
-  </div>
-);
-
-const CheckboxDetail: React.FC<{ label: string; checked: boolean; }> = ({ label, checked }) => (
-    <div className="flex items-center gap-2 text-sm">
-        {checked ? <CheckCircle2 className="w-4 h-4 text-green-600" /> : <XCircle className="w-4 h-4 text-red-500" />}
-        <span>{label}</span>
+// Componente auxiliar para criar seções padronizadas
+const DetailSection: React.FC<{ title: string; icon: React.ElementType; children: React.ReactNode }> = ({ title, icon: Icon, children }) => (
+    <div className="space-y-4">
+        <h3 className="flex items-center text-lg font-semibold text-primary border-b border-primary/20 pb-2 mb-4">
+            <Icon className="w-5 h-5 mr-3" />
+            {title}
+        </h3>
+        <div className="space-y-4 text-sm">{children}</div>
     </div>
 );
 
+// Componente para exibir um item de detalhe (label + valor)
+const InfoItem: React.FC<{ label: string; value?: string | number | null }> = ({ label, value }) => (
+    <div>
+        <p className="font-semibold text-muted-foreground">{label}</p>
+        <p className="text-foreground whitespace-pre-wrap">{value || <span className="italic text-muted-foreground/80">Não informado</span>}</p>
+    </div>
+);
 
-const AvaliacaoDetalhesModal: React.FC<AvaliacaoDetalhesModalProps> = ({ isOpen, onClose, avaliacao: initialAvaliacao, onUpdate }) => {
-  const [avaliacao, setAvaliacao] = useState<AvaliacaoFisioterapeutica | null>(initialAvaliacao);
-  const [novaEvolucao, setNovaEvolucao] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+// Componente para exibir informações booleanas (Sim/Não)
+const BooleanInfo: React.FC<{ label: string; value: boolean; text?: string | null }> = ({ label, value, text }) => (
+    <div>
+        <p className="font-semibold text-muted-foreground">{label}</p>
+        <div className="flex items-center gap-2 mt-1">
+            {value ? <CheckCircle2 className="w-5 h-5 text-green-600" /> : <XCircle className="w-5 h-5 text-red-600" />}
+            <span className="text-foreground">{value ? 'Sim' : 'Não'}</span>
+        </div>
+        {value && text && <p className="text-sm text-foreground mt-1 p-2 bg-muted/50 rounded-md border">{text}</p>}
+    </div>
+);
 
-  React.useEffect(() => {
-    setAvaliacao(initialAvaliacao);
-    setNovaEvolucao(''); // Limpa o campo ao abrir/trocar de avaliação
-  }, [initialAvaliacao, isOpen]);
+// Componente para exibir a escala de dor
+const PainDisplay: React.FC<{ value: number }> = ({ value }) => {
+    const getPainColor = () => {
+        if (value <= 3) return 'bg-green-500';
+        if (value <= 7) return 'bg-yellow-500';
+        return 'bg-red-500';
+    };
+    return (
+        <div>
+            <p className="font-semibold text-muted-foreground">Avaliação da Dor (EVA 0-10)</p>
+            <div className="flex items-center gap-4 mt-2">
+                <Thermometer className="h-5 w-5 text-muted-foreground" />
+                <div className="w-full bg-muted rounded-full h-2.5">
+                    <div className={`${getPainColor()} h-2.5 rounded-full`} style={{ width: `${value * 10}%` }}></div>
+                </div>
+                <Badge variant="secondary" className="w-12 justify-center text-lg">{value}</Badge>
+            </div>
+        </div>
+    );
+};
 
-  const handleAdicionarEvolucao = async () => {
-    if (!avaliacao || !novaEvolucao.trim()) {
-      toast.warning("O campo de evolução não pode estar vazio.");
-      return;
-    }
-    setIsSubmitting(true);
-    try {
-      // A API retorna a avaliação completa e atualizada
-      const avaliacaoAtualizada = await adicionarEvolucao(avaliacao.id, novaEvolucao);
-      setAvaliacao(avaliacaoAtualizada); // Atualiza o estado local para refletir a nova evolução imediatamente
-      setNovaEvolucao('');
-      toast.success("Evolução adicionada com sucesso!");
-      onUpdate(); // Chama a função para atualizar a lista na página de detalhes do cliente
-    } catch (error) {
-      toast.error("Falha ao adicionar evolução.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
+const AvaliacaoDetalhesModal: React.FC<AvaliacaoDetalhesModalProps> = ({ isOpen, onClose, avaliacao }) => {
   if (!avaliacao) return null;
 
+  const formatDate = (dateString: string | undefined) => {
+    if (!dateString) return '';
+    return format(new Date(dateString ? dateString : dateString), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR });
+  };
+  
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-3xl max-h-[90vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle>Detalhes da Avaliação</DialogTitle>
+      <DialogContent className="sm:max-w-3xl max-h-[95vh] flex flex-col p-0 bg-card">
+        <DialogHeader className="p-6 border-b">
+          <DialogTitle className="text-2xl text-primary">Detalhes da Avaliação</DialogTitle>
           <DialogDescription>
-            Realizada em {format(new Date(avaliacao.dataAvaliacao), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
-          </DialogDescription>
-        </DialogHeader>
-        <div className="flex-grow overflow-y-auto pr-6 pl-1 space-y-6">
-          
-          {/* AVALIAÇÃO */}
-          <div className="space-y-2">
-            <h3 className="font-bold text-lg text-primary border-b pb-1">2.0 AVALIAÇÃO</h3>
-            <div className="p-4">
-              <DetailItem label="2.1 História Clínica" value={avaliacao.historiaClinica} />
-              <DetailItem label="2.2 Queixa Principal do Paciente" value={avaliacao.queixaPrincipal} />
-              <DetailItem label="2.3 Hábitos de Vida" value={avaliacao.habitosVida} />
-              <DetailItem label="2.4 HMA (História da Moléstia Atual)" value={avaliacao.hma} />
-              <DetailItem label="2.5 HMP (História da Moléstia Pregressa)" value={avaliacao.hmp} />
-              <DetailItem label="2.6 Antecedentes Pessoais" value={avaliacao.antecedentesPessoais} />
-              <DetailItem label="2.7 Antecedentes Familiares" value={avaliacao.antecedentesFamiliares} />
-              <DetailItem label="2.8 Tratamentos Realizados" value={avaliacao.tratamentosRealizados} />
-            </div>
-          </div>
-
-          {/* EXAME CLÍNICO/FÍSICO */}
-          <div className="space-y-2">
-            <h3 className="font-bold text-lg text-primary border-b pb-1">3.0 EXAME CLÍNICO/FÍSICO</h3>
-            <div className="p-4 space-y-4">
-                <div>
-                    <h4 className="font-semibold mb-2">3.1 Apresentação do Paciente</h4>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                        <CheckboxDetail label="Deambulando" checked={!!avaliacao.deambulando} />
-                        <CheckboxDetail label="Com Apoio" checked={!!avaliacao.deambulandoComApoio} />
-                        <CheckboxDetail label="Cadeira de Rodas" checked={!!avaliacao.cadeiraDeRodas} />
-                        <CheckboxDetail label="Internado" checked={!!avaliacao.internado} />
-                        <CheckboxDetail label="Orientado" checked={!!avaliacao.orientado} />
-                    </div>
-                </div>
-                <DetailItem label="3.2 Exames Complementares" value={avaliacao.temExamesComplementares ? avaliacao.examesComplementaresDescricao : 'Não'} />
-                <DetailItem label="3.3 Usa Medicamentos" value={avaliacao.usaMedicamentos ? avaliacao.medicamentosDescricao : 'Não'} />
-                <DetailItem label="3.4 Realizou Cirurgia" value={avaliacao.realizouCirurgia ? avaliacao.cirurgiasDescricao : 'Não'} />
-                 <div>
-                    <h4 className="font-semibold mb-2">3.5 Inspeção/Palpação</h4>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                        <CheckboxDetail label="Normal" checked={!!avaliacao.inspecaoNormal} />
-                        <CheckboxDetail label="Edema" checked={!!avaliacao.inspecaoEdema} />
-                        <CheckboxDetail label="Cicatrização Incompleta" checked={!!avaliacao.inspecaoCicatrizacaoIncompleta} />
-                        <CheckboxDetail label="Eritemas" checked={!!avaliacao.inspecaoEritemas} />
-                        <CheckboxDetail label="Outros" checked={!!avaliacao.inspecaoOutros} />
-                    </div>
-                     {avaliacao.inspecaoOutros && <DetailItem label="Descrição (Outros)" value={avaliacao.inspecaoOutrosDescricao} />}
-                </div>
-                <DetailItem label="3.6 Semiologia" value={avaliacao.semiologia} />
-                <DetailItem label="3.7 Testes Específicos" value={avaliacao.testesEspecificos} />
-                 <div className='flex items-center gap-2'>
-                    <p className="text-sm font-semibold text-muted-foreground">3.8 Avaliação da Dor (EVA):</p>
-                    <Badge variant="destructive">{avaliacao.avaliacaoDor} / 10</Badge>
-                </div>
-            </div>
-          </div>
-
-          {/* PLANO TERAPÊUTICO */}
-          <div className="space-y-2">
-            <h3 className="font-bold text-lg text-primary border-b pb-1">4.0 PLANO TERAPÊUTICO</h3>
-            <div className="p-4">
-              <DetailItem label="4.1 Objetivos de Tratamento" value={avaliacao.objetivosTratamento} />
-              <DetailItem label="4.2 Recursos Terapêuticos" value={avaliacao.recursosTerapeuticos} />
-              <DetailItem label="4.3 Plano de Tratamento" value={avaliacao.planoTratamento} />
-            </div>
-          </div>
-
-{/* Seção de Evolução - MODIFICADA */}
-          <div className="space-y-2">
-            <h3 className="font-bold text-lg text-primary border-b pb-1">4.4 Evolução</h3>
-            <div className="p-4 space-y-4">
-              {/* Formulário para adicionar nova evolução */}
-              <div className="space-y-2">
-                <Textarea 
-                  placeholder="Adicionar nova evolução..."
-                  value={novaEvolucao}
-                  onChange={(e) => setNovaEvolucao(e.target.value)}
-                />
-                <Button onClick={handleAdicionarEvolucao} disabled={isSubmitting} size="sm">
-                  <PlusCircle className="w-4 h-4 mr-2" />
-                  {isSubmitting ? 'A Adicionar...' : 'Adicionar Evolução'}
-                </Button>
-              </div>
-              {/* Lista de evoluções existentes */}
-              <div className="space-y-3 max-h-48 overflow-y-auto">
-                {avaliacao.evolucoes && avaliacao.evolucoes.length > 0 ? (
-                  avaliacao.evolucoes.map((evo: Evolucao) => (
-                    <div key={evo.id} className="p-3 border rounded-md bg-muted/50">
-                      <p className="text-xs font-semibold text-muted-foreground mb-1">
-                        {format(new Date(evo.dataEvolucao), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                      </p>
-                      <p className="text-sm whitespace-pre-wrap">{evo.evolucao}</p>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-sm text-center text-muted-foreground py-4">Nenhuma evolução registrada.</p>
+            <div className="flex items-center gap-4 text-sm mt-1">
+                <span>Criada em: {formatDate(avaliacao.createdAt)}</span>
+                {avaliacao.updatedAt && avaliacao.createdAt !== avaliacao.updatedAt && (
+                  <span className="text-xs text-muted-foreground italic">
+                    (Atualizado em: {formatDate(avaliacao.updatedAt)})
+                  </span>
                 )}
               </div>
-            </div>
-          </div>
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="flex-1 overflow-y-auto p-6 space-y-8">
+            <DetailSection title="Diagnóstico" icon={FileText}>
+                <InfoItem label="Diagnóstico Clínico" value={avaliacao.diagnosticoClinico} />
+                <InfoItem label="Diagnóstico Fisioterapêutico" value={avaliacao.diagnosticoFisioterapeutico} />
+            </DetailSection>
+
+            <DetailSection title="Avaliação" icon={Stethoscope}>
+                <InfoItem label="Queixa Principal" value={avaliacao.queixaPrincipal} />
+                <InfoItem label="História Clínica" value={avaliacao.historiaClinica} />
+                <InfoItem label="Hábitos de Vida" value={avaliacao.habitosVida} />
+                <InfoItem label="HMA" value={avaliacao.hma} />
+                <InfoItem label="HMP" value={avaliacao.hmp} />
+                <InfoItem label="Antecedentes Pessoais" value={avaliacao.antecedentesPessoais} />
+                <InfoItem label="Antecedentes Familiares" value={avaliacao.antecedentesFamiliares} />
+                <InfoItem label="Tratamentos Realizados" value={avaliacao.tratamentosRealizados} />
+            </DetailSection>
+
+            <DetailSection title="Exame Clínico e Físico" icon={Activity}>
+                <div className="space-y-4">
+                    <div>
+                        <p className="font-semibold text-muted-foreground mb-2">Apresentação do Paciente</p>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 p-4 border rounded-md bg-muted/50">
+                            <BooleanInfo label="Deambulando" value={!!avaliacao.deambulando} />
+                            <BooleanInfo label="Com Apoio" value={!!avaliacao.deambulandoComApoio} />
+                            <BooleanInfo label="Cadeira de Rodas" value={!!avaliacao.cadeiraDeRodas} />
+                            <BooleanInfo label="Internado" value={!!avaliacao.internado} />
+                            <BooleanInfo label="Orientado" value={!!avaliacao.orientado} />
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <BooleanInfo label="Exames Complementares?" value={!!avaliacao.temExamesComplementares} text={avaliacao.examesComplementaresDescricao} />
+                        <BooleanInfo label="Usa Medicamentos?" value={!!avaliacao.usaMedicamentos} text={avaliacao.medicamentosDescricao} />
+                        <BooleanInfo label="Realizou Cirurgia?" value={!!avaliacao.realizouCirurgia} text={avaliacao.cirurgiasDescricao} />
+                    </div>
+                    <div>
+                        <p className="font-semibold text-muted-foreground mb-2">Inspeção e Palpação</p>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 p-4 border rounded-md bg-muted/50">
+                             <BooleanInfo label="Normal" value={!!avaliacao.inspecaoNormal} />
+                             <BooleanInfo label="Edema" value={!!avaliacao.inspecaoEdema} />
+                             <BooleanInfo label="Cicatrização Incompleta" value={!!avaliacao.inspecaoCicatrizacaoIncompleta} />
+                             <BooleanInfo label="Eritemas" value={!!avaliacao.inspecaoEritemas} />
+                             <BooleanInfo label="Outros" value={!!avaliacao.inspecaoOutros} text={avaliacao.inspecaoOutrosDescricao} />
+                        </div>
+                    </div>
+                    <InfoItem label="Semiologia" value={avaliacao.semiologia} />
+                    <InfoItem label="Testes Específicos" value={avaliacao.testesEspecificos} />
+                    <PainDisplay value={avaliacao.avaliacaoDor || 0} />
+                </div>
+            </DetailSection>
+            
+            <DetailSection title="Plano Terapêutico" icon={Clipboard}>
+                <InfoItem label="Objetivos de Tratamento" value={avaliacao.objetivosTratamento} />
+                <InfoItem label="Recursos Terapêuticos" value={avaliacao.recursosTerapeuticos} />
+                <InfoItem label="Plano de Tratamento" value={avaliacao.planoTratamento} />
+            </DetailSection>
+
+            <DetailSection title="Histórico de Evolução" icon={History}>
+                {avaliacao.evolucoes && avaliacao.evolucoes.length > 0 ? (
+                    <div className="space-y-3">
+                        {[...avaliacao.evolucoes].sort((a, b) => new Date(b.dataEvolucao).getTime() - new Date(a.dataEvolucao).getTime()).map((evolucao) => (
+                            <div key={evolucao.id} className="p-3 rounded-lg border bg-muted/50">
+                                <p className="font-semibold text-muted-foreground text-xs pb-1">
+                                    Registrado em: {formatDate(evolucao.dataEvolucao)}
+                                </p>
+                                <p className="whitespace-pre-wrap">{evolucao.evolucao}</p>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <p className="text-center text-muted-foreground py-4">Nenhuma evolução registrada.</p>
+                )}
+            </DetailSection>
         </div>
-        <DialogFooter>
-            <Button variant="outline" onClick={onClose}>Fechar</Button>
+
+        <DialogFooter className="p-4 border-t bg-muted/30">
+          <Button type="button" variant="outline" onClick={onClose}>Fechar</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
