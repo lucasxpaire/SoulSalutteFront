@@ -89,6 +89,7 @@ export interface Sessao {
   status: 'AGENDADA' | 'CONCLUIDA' | 'CANCELADA';
   notasSessao: string;
   clienteId: number;
+  notificacao?: boolean; 
 }
 
 export interface User {

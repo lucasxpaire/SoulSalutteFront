@@ -5,11 +5,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from './ui/switch'; 
 import { Sessao, Cliente } from '@/types';
 import { toast } from 'sonner';
 import { createSessao, updateSessao, getClientes } from '@/services/api';
 import { format } from 'date-fns';
-import { User, Calendar, Clock, ClipboardList, StickyNote, PenSquare } from 'lucide-react';
+import { User, Calendar, Mail, PenSquare, ClipboardList } from 'lucide-react';
 
 interface SessaoFormProps {
   isOpen: boolean;
@@ -43,6 +44,7 @@ const SessaoForm: React.FC<SessaoFormProps> = ({ isOpen, onClose, sessao, initia
             ...sessao,
             dataHoraInicio: format(new Date(sessao.dataHoraInicio), "yyyy-MM-dd'T'HH:mm"),
             dataHoraFim: format(new Date(sessao.dataHoraFim), "yyyy-MM-dd'T'HH:mm"),
+            notificacao: sessao.notificacao ?? true,
         });
         } else {
         setFormData({
@@ -52,12 +54,13 @@ const SessaoForm: React.FC<SessaoFormProps> = ({ isOpen, onClose, sessao, initia
             status: 'AGENDADA',
             notasSessao: '',
             clienteId: initialClienteId,
+            notificacao: true, 
         } as Partial<Sessao>); 
         }
     }
   }, [sessao, initialDate, initialClienteId, isOpen]);
 
-  const handleChange = (field: keyof Sessao, value: string | number) => {
+  const handleChange = (field: keyof Sessao, value: string | number | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -161,6 +164,23 @@ const SessaoForm: React.FC<SessaoFormProps> = ({ isOpen, onClose, sessao, initia
                     <div className="space-y-2">
                         <Label htmlFor="notasSessao">Notas Adicionais</Label>
                         <Textarea id="notasSessao" value={formData.notasSessao || ''} onChange={e => handleChange('notasSessao', e.target.value)} placeholder="Adicione observações sobre a sessão..." className="bg-muted/50"/>
+                    </div>
+
+                     <div className="flex items-center justify-between rounded-lg border p-4 mt-4">
+                        <div className="space-y-0.5">
+                            <Label htmlFor="email-notification" className="flex items-center text-base">
+                                <Mail className="w-5 h-5 mr-2 text-primary" />
+                                Notificar paciente por E-mail
+                            </Label>
+                            <DialogDescription>
+                                Uma confirmação será enviada para o e-mail cadastrado.
+                            </DialogDescription>
+                        </div>
+                        <Switch
+                            id="email-notification"
+                            checked={formData.notificacao ?? false}
+                            onCheckedChange={(checked) => handleChange('notificacao', checked)}
+                        />
                     </div>
                 </div>
             </FormSection>
