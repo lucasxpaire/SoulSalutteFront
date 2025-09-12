@@ -1,85 +1,94 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { CalendarDays, Users, FileText, Clock } from 'lucide-react';
-import { getSessoes, getClientes } from '@/services/api';
-import { Sessao, Cliente } from '@/types';
-import { format, isToday, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { toast } from 'sonner';
-import { useAuth } from '@/contexts/AuthContext';
-import { ContinuousCalendar } from './ContinuousCalendar'; 
+"use client"
+
+import type React from "react"
+import { useState, useEffect, useMemo } from "react"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { CalendarDays, Users, FileText, Clock } from "lucide-react"
+import { getSessoes, getClientes } from "@/services/api"
+import type { Sessao, Cliente } from "@/types"
+import { format, isToday, startOfMonth, endOfMonth, isWithinInterval } from "date-fns"
+import { ptBR } from "date-fns/locale"
+import { toast } from "sonner"
+import { useAuth } from "@/contexts/AuthContext"
 
 interface DashboardProps {
-  onAddSessao: () => void;
+  onAddSessao: () => void
 }
 
 const getGreeting = () => {
-  const hour = new Date().getHours();
-  if (hour < 12) return "Bom dia";
-  if (hour < 18) return "Boa tarde";
-  return "Boa noite";
-};
+  const hour = new Date().getHours()
+  if (hour < 12) return "Bom dia"
+  if (hour < 18) return "Boa tarde"
+  return "Boa noite"
+}
 
 const Dashboard: React.FC<DashboardProps> = ({ onAddSessao }) => {
-  const { user } = useAuth();
-  const [sessoes, setSessoes] = useState<Sessao[]>([]);
-  const [clientes, setClientes] = useState<Cliente[]>([]);
-  const [totalAvaliacoes, setTotalAvaliacoes] = useState(0);
+  const { user } = useAuth()
+  const [sessoes, setSessoes] = useState<Sessao[]>([])
+  const [clientes, setClientes] = useState<Cliente[]>([])
+  const [totalAvaliacoes, setTotalAvaliacoes] = useState(0)
+
+  const googleCalendarEmbedUrl =
+    "https://calendar.google.com/calendar/embed?src=soulsalutte%40gmail.com&ctz=America%2FSao_Paulo"
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [sessoesData, clientesData] = await Promise.all([
-          getSessoes(),
-          getClientes(),
-        ]);
-        setSessoes(sessoesData);
-        setClientes(clientesData);
-
+        const [sessoesData, clientesData] = await Promise.all([getSessoes(), getClientes()])
+        setSessoes(sessoesData)
+        setClientes(clientesData)
       } catch (error) {
-        toast.error('Erro ao carregar dados do dashboard.');
-        console.error(error);
+        toast.error("Erro ao carregar dados do dashboard.")
+        console.error(error)
       }
-    };
-    fetchData();
-  }, []);
+    }
+    fetchData()
+  }, [])
 
   const memoizedStats = useMemo(() => {
-    const sessoesHoje = sessoes.filter(sessao => isToday(new Date(sessao.dataHoraInicio)));
-    const sessoesAgendadas = sessoes.filter(sessao => new Date(sessao.dataHoraInicio) >= new Date() && sessao.status === 'AGENDADA');
-    
-    const sessoesEsteMes = sessoes.filter(sessao => {
-        const today = new Date();
-        return isWithinInterval(new Date(sessao.dataHoraInicio), {
-            start: startOfMonth(today),
-            end: endOfMonth(today)
-        });
-    });
+    const sessoesHoje = sessoes.filter((sessao) => isToday(new Date(sessao.dataHoraInicio)))
+    const sessoesAgendadas = sessoes.filter(
+      (sessao) => new Date(sessao.dataHoraInicio) >= new Date() && sessao.status === "AGENDADA",
+    )
+
+    const sessoesEsteMes = sessoes.filter((sessao) => {
+      const today = new Date()
+      return isWithinInterval(new Date(sessao.dataHoraInicio), {
+        start: startOfMonth(today),
+        end: endOfMonth(today),
+      })
+    })
 
     return {
       totalClientes: clientes.length,
       sessoesHoje,
       sessoesAgendadas: sessoesAgendadas.length,
-      sessoesEsteMes: sessoesEsteMes.length
-    };
-  }, [sessoes, clientes]);
+      sessoesEsteMes: sessoesEsteMes.length,
+    }
+  }, [sessoes, clientes])
 
   const getStatusProps = (status: string) => {
     switch (status) {
-      case 'AGENDADA': return { color: 'bg-blue-500', text: 'Agendada' };
-      case 'CONCLUIDA': return { color: 'bg-green-500', text: 'Concluída' };
-      case 'CANCELADA': return { color: 'bg-red-500', text: 'Cancelada' };
-      default: return { color: 'bg-gray-500', text: 'Outro' };
+      case "AGENDADA":
+        return { color: "bg-blue-500", text: "Agendada" }
+      case "CONCLUIDA":
+        return { color: "bg-green-500", text: "Concluída" }
+      case "CANCELADA":
+        return { color: "bg-red-500", text: "Cancelada" }
+      default:
+        return { color: "bg-gray-500", text: "Outro" }
     }
-  };
+  }
 
-  const clienteMap = useMemo(() => new Map(clientes.map(c => [c.id, c.nome])), [clientes]);
+  const clienteMap = useMemo(() => new Map(clientes.map((c) => [c.id, c.nome])), [clientes])
 
   return (
     <div className="p-6 space-y-6 animate-fade-in">
       <div>
-        <h1 className="text-3xl font-bold text-gray-800">{getGreeting()}, {user?.name}!</h1>
+        <h1 className="text-3xl font-bold text-gray-800">
+          {getGreeting()}, {user?.name}!
+        </h1>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -129,50 +138,63 @@ const Dashboard: React.FC<DashboardProps> = ({ onAddSessao }) => {
         <Card>
           <CardHeader>
             <CardTitle>Agenda do Dia</CardTitle>
-            <CardDescription>
-              {format(new Date(), "eeee, dd 'de' MMMM", { locale: ptBR })}
-            </CardDescription>
+            <CardDescription>{format(new Date(), "eeee, dd 'de' MMMM", { locale: ptBR })}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               {memoizedStats.sessoesHoje.length > 0 ? (
                 memoizedStats.sessoesHoje
-                .sort((a,b) => new Date(a.dataHoraInicio).getTime() - new Date(b.dataHoraInicio).getTime())
-                .map((sessao) => (
-                    <div key={sessao.id} className="flex items-center space-x-4 p-3 rounded-lg hover:bg-muted/50 transition-colors">
+                  .sort((a, b) => new Date(a.dataHoraInicio).getTime() - new Date(b.dataHoraInicio).getTime())
+                  .map((sessao) => (
+                    <div
+                      key={sessao.id}
+                      className="flex items-center space-x-4 p-3 rounded-lg hover:bg-muted/50 transition-colors"
+                    >
                       <div className={`w-1.5 h-10 rounded-full ${getStatusProps(sessao.status).color}`}></div>
                       <div className="flex-1">
-                        <p className="font-semibold text-gray-800">{clienteMap.get(sessao.clienteId) || 'Cliente não encontrado'}</p>
+                        <p className="font-semibold text-gray-800">
+                          {clienteMap.get(sessao.clienteId) || "Cliente não encontrado"}
+                        </p>
                         <p className="text-sm text-muted-foreground">{sessao.nome}</p>
                       </div>
                       <div className="text-right">
-                        <p className="font-mono font-medium">{format(new Date(sessao.dataHoraInicio), 'HH:mm')}</p>
-                        <Badge variant="outline" className="mt-1">{getStatusProps(sessao.status).text}</Badge>
+                        <p className="font-mono font-medium">{format(new Date(sessao.dataHoraInicio), "HH:mm")}</p>
+                        <Badge variant="outline" className="mt-1">
+                          {getStatusProps(sessao.status).text}
+                        </Badge>
                       </div>
                     </div>
                   ))
               ) : (
                 <div className="text-center py-10">
-                    <CalendarDays className="mx-auto h-12 w-12 text-gray-300" />
-                    <h3 className="mt-2 text-sm font-medium text-gray-900">Nenhuma sessão hoje</h3>
-                    <p className="mt-1 text-sm text-gray-500">Aproveite para organizar sua semana.</p>
+                  <CalendarDays className="mx-auto h-12 w-12 text-gray-300" />
+                  <h3 className="mt-2 text-sm font-medium text-gray-900">Nenhuma sessão hoje</h3>
+                  <p className="mt-1 text-sm text-gray-500">Aproveite para organizar sua semana.</p>
                 </div>
               )}
             </div>
           </CardContent>
         </Card>
-        
+
         <Card className="h-[550px] flex flex-col">
-            <CardHeader>
-                <CardTitle>Calendário Anual</CardTitle>
-            </CardHeader>
-            <CardContent className="flex-1 overflow-hidden">
-                <ContinuousCalendar onAddEventClick={onAddSessao} sessoes={sessoes} />
-            </CardContent>
+          <CardHeader>
+            <CardTitle>Calendário Google</CardTitle>
+            <CardDescription>Visualize e gerencie seus compromissos diretamente do Google Agenda</CardDescription>
+          </CardHeader>
+          <CardContent className="p-0 flex-1 rounded-lg overflow-hidden">
+            <iframe
+              src={googleCalendarEmbedUrl}
+              style={{ borderWidth: 0 }}
+              width="100%"
+              height="100%"
+              frameBorder="0"
+              scrolling="no"
+            ></iframe>
+          </CardContent>
         </Card>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default Dashboard;
+export default Dashboard
