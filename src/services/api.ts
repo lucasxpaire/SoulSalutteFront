@@ -82,5 +82,8 @@ export const adicionarEvolucao = (avaliacaoId: number, texto: string): Promise<A
     return apiClient.post(`/avaliacoes/${avaliacaoId}/evolucoes`, { evolucao: texto }).then(res => res.data);
 };
 
+export const getDisponibilidade = (dia: string): Promise<any[]> => {
+    return apiClient.get('/calendar/disponibilidade', { params: { dia } }).then(res => res.data);
+};
 
 export default apiClient;

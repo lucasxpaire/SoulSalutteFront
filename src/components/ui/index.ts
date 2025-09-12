@@ -13,3 +13,4 @@ export { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from './
 export { Textarea } from './textarea';
 export { Checkbox } from './checkbox';
 export { cn } from './utils';
+export { Popover, PopoverTrigger, PopoverContent } from './popover';
