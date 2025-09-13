@@ -1,5 +1,3 @@
-// src/components/SessaoForm.tsx
-
 "use client"
 
 import type React from "react"
@@ -49,22 +47,33 @@ const SessaoForm: React.FC<{
   const [selectedEndTime, setSelectedEndTime] = useState<string>("")
   const [selectedRepeat, setSelectedRepeat] = useState<RepeatOption>({ value: "none", label: "Não se repete" })
 
-  // Estados dos popups
   const [showDatePicker, setShowDatePicker] = useState(false)
   const [showStartTimePicker, setShowStartTimePicker] = useState(false)
   const [showEndTimePicker, setShowEndTimePicker] = useState(false)
   const [showRepeatOptions, setShowRepeatOptions] = useState(false)
   const [showCustomRecurrence, setShowCustomRecurrence] = useState(false)
 
-  // Função centralizada para fechar e limpar os estados dos pop-ups
   const handleClose = () => {
+    // Reset all popup states immediately
     setShowDatePicker(false)
     setShowStartTimePicker(false)
     setShowEndTimePicker(false)
     setShowRepeatOptions(false)
     setShowCustomRecurrence(false)
-    onClose() // Chama a função original para fechar o formulário principal
+
+    // Call parent close handler
+    onClose()
   }
+
+  useEffect(() => {
+    if (!isOpen) {
+      setShowDatePicker(false)
+      setShowStartTimePicker(false)
+      setShowEndTimePicker(false)
+      setShowRepeatOptions(false)
+      setShowCustomRecurrence(false)
+    }
+  }, [isOpen])
 
   useEffect(() => {
     if (isOpen) {
@@ -129,17 +138,21 @@ const SessaoForm: React.FC<{
     startDate.setHours(hours, minutes, 0, 0)
     const endDate = addMinutes(startDate, 60)
     setSelectedEndTime(format(endDate, "HH:mm"))
+    setShowStartTimePicker(false)
   }
 
   const handleEndTimeSelect = (time: string) => {
     setSelectedEndTime(time)
+    setShowEndTimePicker(false)
   }
 
   const handleRepeatSelect = (option: RepeatOption) => {
     setSelectedRepeat(option)
+    setShowRepeatOptions(false)
   }
 
   const handleCustomRecurrenceClick = () => {
+    setShowRepeatOptions(false)
     setShowCustomRecurrence(true)
   }
 
@@ -170,6 +183,7 @@ const SessaoForm: React.FC<{
     }
 
     setSelectedRepeat({ value: "custom", label: customLabel })
+    setShowCustomRecurrence(false)
   }
 
   const formatDateDisplay = (date: Date) => {
@@ -326,7 +340,8 @@ const SessaoForm: React.FC<{
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isOpen && showDatePicker} onOpenChange={setShowDatePicker}>
+      {/* Dialog for Date Picker */}
+      <Dialog open={showDatePicker} onOpenChange={setShowDatePicker}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Selecionar Data</DialogTitle>
@@ -337,8 +352,9 @@ const SessaoForm: React.FC<{
         </DialogContent>
       </Dialog>
 
+      {/* Time Picker Popups */}
       <TimePickerPopup
-        isOpen={isOpen && showStartTimePicker}
+        isOpen={showStartTimePicker}
         onClose={() => setShowStartTimePicker(false)}
         onTimeSelect={handleStartTimeSelect}
         selectedTime={selectedStartTime}
@@ -346,23 +362,25 @@ const SessaoForm: React.FC<{
       />
 
       <TimePickerPopup
-        isOpen={isOpen && showEndTimePicker}
+        isOpen={showEndTimePicker}
         onClose={() => setShowEndTimePicker(false)}
         onTimeSelect={handleEndTimeSelect}
         selectedTime={selectedEndTime}
         title="Hora de término"
       />
 
+      {/* Repeat Options Popup */}
       <RepeatOptionsPopup
-        isOpen={isOpen && showRepeatOptions}
+        isOpen={showRepeatOptions}
         onClose={() => setShowRepeatOptions(false)}
         onRepeatSelect={handleRepeatSelect}
         onCustomizeClick={handleCustomRecurrenceClick}
         selectedRepeat={selectedRepeat}
       />
 
+      {/* Custom Recurrence Popup */}
       <CustomRecurrencePopup
-        isOpen={isOpen && showCustomRecurrence}
+        isOpen={showCustomRecurrence}
         onClose={() => setShowCustomRecurrence(false)}
         onSave={handleCustomRecurrenceSave}
       />

@@ -51,6 +51,7 @@ const InteractiveCalendar: React.FC<InteractiveCalendarProps> = ({
   const [draggedEvent, setDraggedEvent] = useState<DraggedEvent | null>(null)
   const [clientes, setClientes] = useState<Cliente[]>([])
   const [googleSyncEnabled, setGoogleSyncEnabled] = useState(false)
+  const [contextMenuOpen, setContextMenuOpen] = useState<string | null>(null)
 
   const { isAuthenticated, createEvent, updateEvent, deleteEvent, moveEvent } = useGoogleCalendar()
 
@@ -85,6 +86,7 @@ const InteractiveCalendar: React.FC<InteractiveCalendarProps> = ({
       toast.error("Erro ao excluir sessão")
     }
     setSelectedDate(null)
+    setContextMenuOpen(null)
   }
 
   const handleDragStart = (e: React.DragEvent, sessao: Sessao) => {
@@ -193,7 +195,17 @@ const InteractiveCalendar: React.FC<InteractiveCalendarProps> = ({
 
           <div className="space-y-1">
             {daysSessoes.slice(0, 3).map((sessao) => (
-              <ContextMenu key={sessao.id}>
+              <ContextMenu
+                key={sessao.id}
+                open={contextMenuOpen === `sessao-${sessao.id}`}
+                onOpenChange={(open) => {
+                  if (open) {
+                    setContextMenuOpen(`sessao-${sessao.id}`)
+                  } else {
+                    setContextMenuOpen(null)
+                  }
+                }}
+              >
                 <ContextMenuTrigger>
                   <div
                     draggable
@@ -221,8 +233,11 @@ const InteractiveCalendar: React.FC<InteractiveCalendarProps> = ({
                 <ContextMenuContent>
                   <ContextMenuItem
                     onClick={() => {
+                      setContextMenuOpen(null)
                       setSelectedDate(null)
-                      onEditSessao(sessao)
+                      setTimeout(() => {
+                        onEditSessao(sessao)
+                      }, 100)
                     }}
                     className="flex items-center gap-2"
                   >
@@ -230,7 +245,10 @@ const InteractiveCalendar: React.FC<InteractiveCalendarProps> = ({
                     Editar Sessão
                   </ContextMenuItem>
                   <ContextMenuItem
-                    onClick={() => handleDeleteSessao(sessao.id)}
+                    onClick={() => {
+                      setContextMenuOpen(null)
+                      handleDeleteSessao(sessao.id)
+                    }}
                     className="flex items-center gap-2 text-red-600"
                   >
                     <Trash2 className="h-4 w-4" />
