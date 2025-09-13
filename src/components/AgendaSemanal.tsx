@@ -5,10 +5,12 @@ import { Calendar, dateFnsLocalizer, Views, EventProps, View } from 'react-big-c
 import { format, parse, startOfWeek, getDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Sessao, Cliente } from '@/types';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
+import { Edit, Trash2 } from 'lucide-react';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
-import './AgendaSemanal.css'; // Criaremos este arquivo para estilos customizados
+import './AgendaSemanal.css';
 
-// Configuração do localizador para usar date-fns com o idioma português
 const locales = {
   'pt-BR': ptBR,
 };
@@ -20,29 +22,27 @@ const localizer = dateFnsLocalizer({
   locales,
 });
 
-// Tipos para os props do nosso componente
 interface AgendaSemanalProps {
   sessoes: Sessao[];
   clientes: Cliente[];
   onSelectSessao: (sessao: Sessao) => void;
+  onDeleteSessao: (sessao: Sessao) => void; // Nova propriedade
   onSelectSlot: (start: Date, end: Date) => void;
 }
 
-// Formato do evento que o react-big-calendar espera
 interface CalendarEvent {
   id: number;
   title: string;
   start: Date;
   end: Date;
-  resource: Sessao; // Guardamos a sessão original aqui
+  resource: Sessao;
 }
 
-// Componente customizado para exibir o evento no calendário
 const EventoCustomizado = ({ event }: EventProps<CalendarEvent>) => {
   const statusClasses = {
-    AGENDADA: 'bg-blue-100 border-blue-500 text-blue-800',
-    CONCLUIDA: 'bg-green-100 border-green-500 text-green-800',
-    CANCELADA: 'bg-red-100 border-red-500 text-red-800',
+    AGENDADA: 'bg-blue-100 border-l-4 border-blue-500 text-blue-800',
+    CONCLUIDA: 'bg-green-100 border-l-4 border-green-500 text-green-800',
+    CANCELADA: 'bg-red-100 border-l-4 border-red-500 text-red-800',
   };
   
   return (
@@ -53,9 +53,8 @@ const EventoCustomizado = ({ event }: EventProps<CalendarEvent>) => {
   );
 };
 
-export const AgendaSemanal: React.FC<AgendaSemanalProps> = ({ sessoes, clientes, onSelectSessao, onSelectSlot }) => {
-
-  // Converte nossas sessões para o formato que a biblioteca entende
+export const AgendaSemanal: React.FC<AgendaSemanalProps> = ({ sessoes, clientes, onSelectSessao, onDeleteSessao, onSelectSlot }) => {
+  
   const eventos: CalendarEvent[] = sessoes.map(sessao => {
     const cliente = clientes.find(c => c.id === sessao.clienteId);
     return {
@@ -67,23 +66,40 @@ export const AgendaSemanal: React.FC<AgendaSemanalProps> = ({ sessoes, clientes,
     };
   });
 
-  // Função para estilizar os eventos baseados no status da sessão
   const eventPropGetter = (event: CalendarEvent) => {
-    const status = event.resource.status;
-    const style = {
-      backgroundColor: '#3174ad',
-      borderRadius: '5px',
-      opacity: 0.8,
-      color: 'white',
-      border: '0px',
-      display: 'block',
-    };
-    if (status === 'CONCLUIDA') {
-      style.backgroundColor = '#28a745';
-    } else if (status === 'CANCELADA') {
-      style.backgroundColor = '#dc3545';
-    }
-    return { style };
+    return { className: `cursor-pointer` };
+  };
+
+  const EventWrapper: React.FC<{ children: React.ReactElement, event: CalendarEvent }> = ({ children, event }) => {
+    return (
+      <Popover>
+        <PopoverTrigger asChild onClick={(e) => e.stopPropagation()}>{children}</PopoverTrigger>
+        <PopoverContent className="w-56 p-2" onClick={(e) => e.stopPropagation()}>
+          <div className="space-y-2">
+            <h4 className="font-medium leading-none">{event.title}</h4>
+            <p className="text-sm text-muted-foreground">
+              {format(event.start, "HH:mm")} - {format(event.end, "HH:mm")}
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full justify-start"
+              onClick={() => onSelectSessao(event.resource)}
+            >
+              <Edit className="mr-2 h-4 w-4" /> Editar
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              className="w-full justify-start"
+              onClick={() => onDeleteSessao(event.resource)}
+            >
+              <Trash2 className="mr-2 h-4 w-4" /> Excluir
+            </Button>
+          </div>
+        </PopoverContent>
+      </Popover>
+    );
   };
 
   return (
@@ -96,7 +112,6 @@ export const AgendaSemanal: React.FC<AgendaSemanalProps> = ({ sessoes, clientes,
         defaultView={Views.WEEK}
         views={['day', 'week', 'month']}
         selectable
-        onSelectEvent={(event) => onSelectSessao(event.resource)}
         onSelectSlot={(slotInfo) => onSelectSlot(slotInfo.start, slotInfo.end)}
         culture="pt-BR"
         messages={{
@@ -115,10 +130,11 @@ export const AgendaSemanal: React.FC<AgendaSemanalProps> = ({ sessoes, clientes,
         }}
         eventPropGetter={eventPropGetter}
         components={{
-          event: EventoCustomizado, // Usamos nosso componente customizado
+          event: EventoCustomizado,
+          eventWrapper: EventWrapper,
         }}
-        min={new Date(0, 0, 0, 8, 0, 0)} // Início do dia às 8h
-        max={new Date(0, 0, 0, 20, 0, 0)} // Fim do dia às 20h
+        min={new Date(0, 0, 0, 8, 0, 0)}
+        max={new Date(0, 0, 0, 20, 0, 0)}
       />
     </div>
   );

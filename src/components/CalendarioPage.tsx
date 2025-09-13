@@ -8,14 +8,15 @@ import { Calendar as CalendarIcon } from "lucide-react";
 import type { Sessao, Cliente } from "@/types";
 import { getSessoes, getClientes } from "@/services/api";
 import { toast } from "sonner";
-import { AgendaSemanal } from "./AgendaSemanal"; // Importamos nosso novo componente
+import { AgendaSemanal } from "./AgendaSemanal";
 
 interface CalendarioPageProps {
   onAddSessao: (date: Date) => void;
   onEditSessao: (sessao: Sessao) => void;
+  onDeleteSessao: (sessao: Sessao) => void; // Nova propriedade
 }
 
-const CalendarioPage: React.FC<CalendarioPageProps> = ({ onAddSessao, onEditSessao }) => {
+const CalendarioPage: React.FC<CalendarioPageProps> = ({ onAddSessao, onEditSessao, onDeleteSessao }) => {
   const [sessoes, setSessoes] = useState<Sessao[]>([]);
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [loading, setLoading] = useState(true);
@@ -69,6 +70,7 @@ const CalendarioPage: React.FC<CalendarioPageProps> = ({ onAddSessao, onEditSess
             sessoes={sessoes}
             clientes={clientes}
             onSelectSessao={onEditSessao}
+            onDeleteSessao={onDeleteSessao} // Passando a nova função
             onSelectSlot={handleSelectSlot}
           />
         )}

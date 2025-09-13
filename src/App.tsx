@@ -1,7 +1,9 @@
+// src/App.tsx
+
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useMemo } from "react" // Adicionado useMemo
 import { AuthProvider, useAuth } from "@/contexts/AuthContext"
 import LoginForm from "@/components/LoginForm"
 import Layout from "@/components/Layout"
@@ -18,13 +20,14 @@ import ConfirmationDialog from "@/components/ConfirmationDialog"
 import { Toaster } from "@/components/ui/sonner"
 import type { Cliente, Sessao, AvaliacaoFisioterapeutica } from "@/types"
 import "date-fns/locale/pt-BR"
-import { deleteCliente as apiDeleteCliente } from "@/services/api"
+import { deleteCliente as apiDeleteCliente, deleteSessao as apiDeleteSessao } from "@/services/api" // Importar deleteSessao
 import { toast } from "sonner"
 
 const AppContent: React.FC = () => {
   const { user } = useAuth()
   const [currentPage, setCurrentPage] = useState("dashboard")
   const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null)
+  const [clientes, setClientes] = useState<Cliente[]>([]) // Estado para clientes
   const [refreshKey, setRefreshKey] = useState(0)
 
   // Modal states
@@ -33,6 +36,11 @@ const AppContent: React.FC = () => {
   const [isSessaoFormOpen, setIsSessaoFormOpen] = useState(false)
   const [isConfirmDeleteDialogOpen, setIsConfirmDeleteDialogOpen] = useState(false)
   const [isAvaliacaoDetalhesOpen, setIsAvaliacaoDetalhesOpen] = useState(false)
+
+  // NOVO: Estado para confirmação de exclusão de sessão
+  const [isConfirmSessaoDeleteDialogOpen, setIsConfirmSessaoDeleteDialogOpen] = useState(false);
+  const [sessaoToDelete, setSessaoToDelete] = useState<Sessao | null>(null);
+
 
   const [editingCliente, setEditingCliente] = useState<Cliente | undefined>(undefined)
   const [editingSessao, setEditingSessao] = useState<Sessao | undefined>(undefined)
@@ -43,6 +51,9 @@ const AppContent: React.FC = () => {
   const [initialClienteId, setInitialClienteId] = useState<number | undefined>(undefined)
 
   const [editingAvaliacao, setEditingAvaliacao] = useState<AvaliacaoFisioterapeutica | undefined>(undefined)
+  
+  // Mapeia IDs de cliente para nomes para fácil acesso
+  const clienteMap = useMemo(() => new Map(clientes.map((c) => [c.id, c.nome])), [clientes]);
 
   const forceRefresh = () => setRefreshKey((prev) => prev + 1)
 
@@ -141,6 +152,27 @@ const AppContent: React.FC = () => {
     setIsSessaoFormOpen(true)
   }
 
+  // NOVO: Handler para iniciar a exclusão da sessão
+  const handleDeleteSessao = (sessao: Sessao) => {
+    setSessaoToDelete(sessao);
+    setIsConfirmSessaoDeleteDialogOpen(true);
+  };
+
+  // NOVO: Handler para confirmar a exclusão da sessão
+  const confirmDeleteSessao = async () => {
+    if (sessaoToDelete) {
+      try {
+        await apiDeleteSessao(sessaoToDelete.id);
+        toast.success(`Sessão excluída com sucesso.`);
+        setSessaoToDelete(null);
+        setIsConfirmSessaoDeleteDialogOpen(false);
+        forceRefresh();
+      } catch (error: any) {
+        toast.error(error.response?.data?.message || "Erro ao excluir a sessão.");
+      }
+    }
+  };
+
   const handleSaveSessao = () => {
     setIsSessaoFormOpen(false)
     setEditingSessao(undefined)
@@ -191,7 +223,7 @@ const AppContent: React.FC = () => {
         ) : null
 
       case "calendario":
-        return <CalendarioPage key={refreshKey} onAddSessao={handleAddSessao} onEditSessao={handleEditSessao} />
+        return <CalendarioPage key={refreshKey} onAddSessao={handleAddSessao} onEditSessao={handleEditSessao} onDeleteSessao={handleDeleteSessao} />
 
       case "avaliacoes":
         return <AvaliacoesPage />
@@ -252,6 +284,15 @@ const AppContent: React.FC = () => {
         onConfirm={confirmDeleteCliente}
         title="Confirmar Exclusão"
         description={`Você tem certeza que deseja excluir o cliente "${clienteToDelete?.nome}"? Esta ação não pode ser desfeita.`}
+      />
+      
+      {/* NOVO: Dialogo de confirmação para exclusão de sessão */}
+      <ConfirmationDialog
+        isOpen={isConfirmSessaoDeleteDialogOpen}
+        onClose={() => setIsConfirmSessaoDeleteDialogOpen(false)}
+        onConfirm={confirmDeleteSessao}
+        title="Excluir Sessão"
+        description={`Você tem certeza que deseja excluir esta sessão? Esta ação não pode ser desfeita.`}
       />
 
       <Toaster />
