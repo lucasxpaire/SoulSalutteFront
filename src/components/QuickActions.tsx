@@ -53,21 +53,23 @@ const QuickActions: React.FC<QuickActionsProps> = ({ onAddSessao, onAddCliente, 
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 gap-3">
-          {actions.map((action, index) => (
-            <Button
-              key={index}
-              onClick={action.onClick}
-              className={`h-auto p-4 flex flex-col items-center gap-2 transition-all duration-200 ${action.color}`}
-              variant="default"
-            >
-              <action.icon className="h-6 w-6" />
-              <div className="text-center">
-                <div className="font-semibold text-sm">{action.title}</div>
-                <div className="text-xs opacity-90">{action.description}</div>
-              </div>
-            </Button>
-          ))}
+        <div className="h-86 flex flex-col">
+          <div className="grid grid-cols-2 gap-4 flex-1">
+            {actions.map((action, index) => (
+              <Button
+                key={index}
+                onClick={action.onClick}
+                className={`h-full p-6 flex flex-col items-center justify-center gap-3 transition-all duration-200 ${action.color}`}
+                variant="default"
+              >
+                <action.icon className="h-8 w-8" />
+                <div className="text-center">
+                  <div className="font-semibold text-base">{action.title}</div>
+                  <div className="text-sm opacity-90">{action.description}</div>
+                </div>
+              </Button>
+            ))}
+          </div>
         </div>
       </CardContent>
     </Card>

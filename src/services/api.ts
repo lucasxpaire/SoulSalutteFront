@@ -42,7 +42,15 @@ export const deleteCliente = (id: number): Promise<void> => {
 
 // Funções para Sessões
 export const getSessoes = (): Promise<Sessao[]> => {
-  return apiClient.get('/sessoes').then(res => res.data);
+  return apiClient.get('/sessoes').then(res => {
+    if (Array.isArray(res.data)) {
+      return res.data.map((sessao: any) => ({
+        ...sessao,
+        clienteId: sessao.cliente?.id,
+      }));
+    }
+    return [];
+  });
 };
 
 export const getSessoesByClienteId = (clienteId: number): Promise<Sessao[]> => {

@@ -54,8 +54,6 @@ const SessaoForm: React.FC<{
   const [showRepeatOptions, setShowRepeatOptions] = useState(false)
   const [showCustomRecurrence, setShowCustomRecurrence] = useState(false)
 
-  const [isAllDay, setIsAllDay] = useState(false)
-
   useEffect(() => {
     if (isOpen) {
       getClientes()
@@ -199,7 +197,7 @@ const SessaoForm: React.FC<{
             <DialogDescription>Configure os detalhes da sessão de fisioterapia.</DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
+          <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6 no-scrollbar">
             <div className="space-y-2">
               <Label htmlFor="clienteId">Cliente *</Label>
               <Select
@@ -224,71 +222,58 @@ const SessaoForm: React.FC<{
 
             <div className="space-y-4">
               {/* Data e Horários */}
-              <div className="flex items-center gap-2">
-                <Clock className="w-5 h-5 text-muted-foreground" />
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-muted-foreground" />
 
-                {/* Seletor de Data */}
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowDatePicker(true)}
-                  className="flex-1 justify-start text-left font-normal"
-                >
-                  {formatDateDisplay(selectedDate)}
-                </Button>
+                  {/* Seletor de Data */}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowDatePicker(true)}
+                    className="flex-1 justify-start text-left font-normal"
+                  >
+                    {formatDateDisplay(selectedDate)}
+                  </Button>
 
-                {/* Seletor de Hora Início */}
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowStartTimePicker(true)}
-                  className="w-24 justify-center"
-                  disabled={isAllDay}
-                >
-                  {selectedStartTime}
-                </Button>
+                  {/* Seletor de Hora Início */}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowStartTimePicker(true)}
+                    className="w-24 justify-center"
+                  >
+                    {selectedStartTime}
+                  </Button>
 
-                <span className="text-muted-foreground">–</span>
+                  <span className="text-muted-foreground">–</span>
 
-                {/* Seletor de Hora Fim */}
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowEndTimePicker(true)}
-                  className="w-24 justify-center"
-                  disabled={isAllDay}
-                >
-                  {selectedEndTime}
-                </Button>
+                  {/* Seletor de Hora Fim */}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowEndTimePicker(true)}
+                    className="w-24 justify-center"
+                  >
+                    {selectedEndTime}
+                  </Button>
+                </div>
+
+                {/* Seletor de Repetição - moved to separate row to prevent overflow */}
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5" /> {/* Spacer to align with clock icon */}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowRepeatOptions(true)}
+                    className="flex-1 justify-start gap-2 overflow-hidden"
+                  >
+                    <Repeat className="w-4 h-4 flex-shrink-0" />
+                    <span className="truncate">{selectedRepeat.label}</span>
+                    <ChevronDown className="w-4 h-4 flex-shrink-0 ml-auto" />
+                  </Button>
+                </div>
               </div>
-
-              {/* Opções de Dia Inteiro e Fuso Horário */}
-              <div className="flex items-center gap-4 text-sm">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={isAllDay}
-                    onChange={(e) => setIsAllDay(e.target.checked)}
-                    className="rounded"
-                  />
-                  Dia inteiro
-                </label>
-                <Button type="button" variant="link" className="p-0 h-auto text-blue-600 text-sm">
-                  Fuso horário
-                </Button>
-              </div>
-
-              {/* Seletor de Repetição */}
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setShowRepeatOptions(true)}
-                className="w-fit justify-start gap-2"
-              >
-                <Repeat className="w-4 h-4" />
-                {selectedRepeat.label}
-                <ChevronDown className="w-4 h-4" />
-              </Button>
             </div>
 
             <div className="space-y-2">

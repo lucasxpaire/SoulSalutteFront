@@ -14,9 +14,12 @@ import { toast } from "sonner"
 import { useAuth } from "@/contexts/AuthContext"
 import StatsCard from "./StatsCard"
 import QuickActions from "./QuickActions"
+import ClienteForm from "./ClienteForm" // Import ClienteForm component
 
 interface DashboardProps {
   onAddSessao: () => void
+  onAddCliente?: () => void
+  onNavigate?: (page: string) => void
 }
 
 const getGreeting = () => {
@@ -26,12 +29,14 @@ const getGreeting = () => {
   return "Boa noite"
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ onAddSessao }) => {
+const Dashboard: React.FC<DashboardProps> = ({ onAddSessao, onAddCliente, onNavigate }) => {
   const { user } = useAuth()
   const [sessoes, setSessoes] = useState<Sessao[]>([])
   const [clientes, setClientes] = useState<Cliente[]>([])
   const [totalAvaliacoes, setTotalAvaliacoes] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
+  const [isClienteFormOpen, setIsClienteFormOpen] = useState(false) // State for client modal
+  const [editingCliente, setEditingCliente] = useState<Cliente | undefined>(undefined) // State for editing client
 
   const googleCalendarEmbedUrl =
     "https://calendar.google.com/calendar/embed?src=soulsalutte%40gmail.com&ctz=America%2FSao_Paulo"
@@ -76,11 +81,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onAddSessao }) => {
       })
     })
 
-    const clientesTrend = clientes.length > 0 ? 12 : 0 // Simulando crescimento
-    const sessoesTrend =
-      sessoesEsteMes.length > sessoesUltimoMes.length
-        ? Math.round(((sessoesEsteMes.length - sessoesUltimoMes.length) / Math.max(sessoesUltimoMes.length, 1)) * 100)
-        : 0
+    const clientesTrend = 0 // Removed trend calculation
+    const sessoesTrend = 0 // Removed trend calculation
 
     return {
       totalClientes: clientes.length,
@@ -108,18 +110,31 @@ const Dashboard: React.FC<DashboardProps> = ({ onAddSessao }) => {
   const clienteMap = useMemo(() => new Map(clientes.map((c) => [c.id, c.nome])), [clientes])
 
   const handleAddCliente = () => {
-    // Implementar navegação para adicionar cliente
-    toast.info("Funcionalidade em desenvolvimento")
+    setEditingCliente(undefined)
+    setIsClienteFormOpen(true)
   }
 
   const handleViewCalendar = () => {
-    // Implementar navegação para calendário
-    toast.info("Funcionalidade em desenvolvimento")
+    if (onNavigate) {
+      onNavigate("calendario")
+    } else {
+      toast.info("Funcionalidade em desenvolvimento")
+    }
   }
 
   const handleViewReports = () => {
-    // Implementar navegação para relatórios
     toast.info("Funcionalidade em desenvolvimento")
+  }
+
+  const handleClienteSave = async () => {
+    try {
+      const [sessoesData, clientesData] = await Promise.all([getSessoes(), getClientes()])
+      setSessoes(sessoesData)
+      setClientes(clientesData)
+    } catch (error) {
+      toast.error("Erro ao recarregar dados.")
+      console.error(error)
+    }
   }
 
   if (isLoading) {
@@ -155,7 +170,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onAddSessao }) => {
           value={memoizedStats.totalClientes}
           description="pacientes ativos"
           icon={Users}
-          trend={{ value: memoizedStats.clientesTrend, isPositive: true }}
           color="primary"
         />
         <StatsCard
@@ -177,7 +191,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onAddSessao }) => {
           value={memoizedStats.sessoesEsteMes}
           description="total no mês atual"
           icon={TrendingUp}
-          trend={{ value: memoizedStats.sessoesTrend, isPositive: memoizedStats.sessoesTrend > 0 }}
           color="warning"
         />
       </div>
@@ -193,7 +206,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onAddSessao }) => {
         </div>
 
         <div className="lg:col-span-1">
-          <Card className="border-0 shadow-md h-full">
+          <Card className="border-0 shadow-md">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
@@ -210,46 +223,48 @@ const Dashboard: React.FC<DashboardProps> = ({ onAddSessao }) => {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {memoizedStats.sessoesHoje.length > 0 ? (
-                  memoizedStats.sessoesHoje
-                    .sort((a, b) => new Date(a.dataHoraInicio).getTime() - new Date(b.dataHoraInicio).getTime())
-                    .map((sessao, index) => (
-                      <div
-                        key={sessao.id}
-                        className="flex items-center space-x-4 p-4 rounded-xl hover:bg-muted/50 transition-all duration-200 border border-border/50 animate-slide-in-right"
-                        style={{ animationDelay: `${index * 0.1}s` }}
-                      >
-                        <div className={`w-2 h-16 rounded-full ${getStatusProps(sessao.status).color}`}></div>
-                        <div className="flex-1">
-                          <p className="font-semibold text-foreground">
-                            {clienteMap.get(sessao.clienteId) || "Cliente não encontrado"}
-                          </p>
-                          <p className="text-sm text-muted-foreground">{sessao.nome}</p>
+              <div className="h-80 overflow-y-auto">
+                <div className="space-y-3">
+                  {memoizedStats.sessoesHoje.length > 0 ? (
+                    memoizedStats.sessoesHoje
+                      .sort((a, b) => new Date(a.dataHoraInicio).getTime() - new Date(b.dataHoraInicio).getTime())
+                      .map((sessao, index) => (
+                        <div
+                          key={sessao.id}
+                          className="flex items-center space-x-4 p-4 rounded-xl hover:bg-muted/50 transition-all duration-200 border border-border/50 animate-slide-in-right"
+                          style={{ animationDelay: `${index * 0.1}s` }}
+                        >
+                          <div className={`w-2 h-16 rounded-full ${getStatusProps(sessao.status).color}`}></div>
+                          <div className="flex-1">
+                            <p className="font-semibold text-foreground">
+                              {clienteMap.get(sessao.clienteId) || "Cliente não encontrado"}
+                            </p>
+                            <p className="text-sm text-muted-foreground">{sessao.nome}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-mono font-bold text-lg">
+                              {format(new Date(sessao.dataHoraInicio), "HH:mm")}
+                            </p>
+                            <Badge variant={getStatusProps(sessao.status).variant} className="mt-1">
+                              {getStatusProps(sessao.status).text}
+                            </Badge>
+                          </div>
                         </div>
-                        <div className="text-right">
-                          <p className="font-mono font-bold text-lg">
-                            {format(new Date(sessao.dataHoraInicio), "HH:mm")}
-                          </p>
-                          <Badge variant={getStatusProps(sessao.status).variant} className="mt-1">
-                            {getStatusProps(sessao.status).text}
-                          </Badge>
-                        </div>
+                      ))
+                  ) : (
+                    <div className="text-center py-12">
+                      <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                        <CalendarDays className="h-8 w-8 text-muted-foreground" />
                       </div>
-                    ))
-                ) : (
-                  <div className="text-center py-12">
-                    <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-                      <CalendarDays className="h-8 w-8 text-muted-foreground" />
+                      <h3 className="text-lg font-medium text-foreground mb-2">Nenhuma sessão hoje</h3>
+                      <p className="text-muted-foreground mb-4">Aproveite para organizar sua semana.</p>
+                      <Button onClick={onAddSessao} variant="outline">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Agendar Sessão
+                      </Button>
                     </div>
-                    <h3 className="text-lg font-medium text-foreground mb-2">Nenhuma sessão hoje</h3>
-                    <p className="text-muted-foreground mb-4">Aproveite para organizar sua semana.</p>
-                    <Button onClick={onAddSessao} variant="outline">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Agendar Sessão
-                    </Button>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -277,6 +292,15 @@ const Dashboard: React.FC<DashboardProps> = ({ onAddSessao }) => {
           </div>
         </CardContent>
       </Card>
+
+      {isClienteFormOpen && (
+        <ClienteForm
+          isOpen={isClienteFormOpen}
+          onClose={() => setIsClienteFormOpen(false)}
+          cliente={editingCliente}
+          onSave={handleClienteSave}
+        />
+      )}
     </div>
   )
 }
