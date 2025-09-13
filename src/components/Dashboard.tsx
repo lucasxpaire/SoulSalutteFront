@@ -15,11 +15,14 @@ import { useAuth } from "@/contexts/AuthContext"
 import StatsCard from "./StatsCard"
 import QuickActions from "./QuickActions"
 import ClienteForm from "./ClienteForm" // Import ClienteForm component
+import { AgendaSemanal } from "./AgendaSemanal" // Import AgendaSemanal
 
 interface DashboardProps {
-  onAddSessao: () => void
+  onAddSessao: (date: Date) => void // Modified to accept a date
   onAddCliente?: () => void
   onNavigate?: (page: string) => void
+  onEditSessao: (sessao: Sessao) => void // Added prop
+  onDeleteSessao: (sessao: Sessao) => void // Added prop
 }
 
 const getGreeting = () => {
@@ -29,7 +32,7 @@ const getGreeting = () => {
   return "Boa noite"
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ onAddSessao, onAddCliente, onNavigate }) => {
+const Dashboard: React.FC<DashboardProps> = ({ onAddSessao, onAddCliente, onNavigate, onEditSessao, onDeleteSessao }) => {
   const { user } = useAuth()
   const [sessoes, setSessoes] = useState<Sessao[]>([])
   const [clientes, setClientes] = useState<Cliente[]>([])
@@ -37,9 +40,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onAddSessao, onAddCliente, onNavi
   const [isLoading, setIsLoading] = useState(true)
   const [isClienteFormOpen, setIsClienteFormOpen] = useState(false) // State for client modal
   const [editingCliente, setEditingCliente] = useState<Cliente | undefined>(undefined) // State for editing client
-
-  const googleCalendarEmbedUrl =
-    "https://calendar.google.com/calendar/embed?src=soulsalutte%40gmail.com&ctz=America%2FSao_Paulo"
 
   useEffect(() => {
     const fetchData = async () => {
@@ -198,7 +198,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onAddSessao, onAddCliente, onNavi
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="lg:col-span-1">
           <QuickActions
-            onAddSessao={onAddSessao}
+            onAddSessao={() => onAddSessao(new Date())}
             onAddCliente={handleAddCliente}
             onViewCalendar={handleViewCalendar}
             onViewReports={handleViewReports}
@@ -216,7 +216,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onAddSessao, onAddCliente, onNavi
                   </CardTitle>
                   <CardDescription>{format(new Date(), "eeee, dd 'de' MMMM", { locale: ptBR })}</CardDescription>
                 </div>
-                <Button onClick={onAddSessao} size="sm" className="bg-primary hover:bg-primary/90">
+                <Button onClick={() => onAddSessao(new Date())} size="sm" className="bg-primary hover:bg-primary/90">
                   <Plus className="h-4 w-4 mr-2" />
                   Nova Sessão
                 </Button>
@@ -258,7 +258,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onAddSessao, onAddCliente, onNavi
                       </div>
                       <h3 className="text-lg font-medium text-foreground mb-2">Nenhuma sessão hoje</h3>
                       <p className="text-muted-foreground mb-4">Aproveite para organizar sua semana.</p>
-                      <Button onClick={onAddSessao} variant="outline">
+                      <Button onClick={() => onAddSessao(new Date())} variant="outline">
                         <Plus className="h-4 w-4 mr-2" />
                         Agendar Sessão
                       </Button>
@@ -275,19 +275,18 @@ const Dashboard: React.FC<DashboardProps> = ({ onAddSessao, onAddCliente, onNavi
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <CalendarDays className="h-5 w-5 text-primary" />
-            Calendário Google
+            Calendário Semanal
           </CardTitle>
-          <CardDescription>Visualize e gerencie seus compromissos diretamente do Google Agenda</CardDescription>
+          <CardDescription>Visualize e gerencie seus compromissos da semana</CardDescription>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="rounded-lg overflow-hidden border border-border/50" style={{ height: "550px" }}>
-            <iframe
-              src={googleCalendarEmbedUrl}
-              style={{ borderWidth: 0 }}
-              width="100%"
-              height="100%"
-              frameBorder="0"
-              scrolling="no"
+          <div className="rounded-lg overflow-hidden border border-border/50" style={{ height: "800px" }}>
+            <AgendaSemanal
+              sessoes={sessoes}
+              clientes={clientes}
+              onSelectSessao={onEditSessao}
+              onDeleteSessao={onDeleteSessao}
+              onSelectSlot={(start, end) => onAddSessao(start)}
             />
           </div>
         </CardContent>

@@ -198,9 +198,11 @@ const AppContent: React.FC = () => {
         return (
           <Dashboard
             key={refreshKey}
-            onAddSessao={() => handleAddSessao(new Date())}
+            onAddSessao={(date) => handleAddSessao(date)}
             onAddCliente={handleAddCliente}
             onNavigate={handleNavigate}
+            onEditSessao={handleEditSessao}
+            onDeleteSessao={handleDeleteSessao}
           />
         )
 
@@ -231,9 +233,11 @@ const AppContent: React.FC = () => {
       default:
         return (
           <Dashboard
-            onAddSessao={() => handleAddSessao(new Date())}
+            onAddSessao={(date) => handleAddSessao(date)}
             onAddCliente={handleAddCliente}
             onNavigate={handleNavigate}
+            onEditSessao={handleEditSessao}
+            onDeleteSessao={handleDeleteSessao}
           />
         )
     }
