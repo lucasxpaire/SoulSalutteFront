@@ -1,0 +1,52 @@
+/* src/components/AgendaSemanal.css */
+
+.rbc-calendar {
+  font-family: 'Inter', sans-serif;
+}
+
+.rbc-toolbar {
+  margin-bottom: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.rbc-btn-group button {
+  background-color: transparent;
+  border: 1px solid hsl(var(--border));
+  color: hsl(var(--foreground));
+  padding: 0.5rem 1rem;
+  transition: all 0.2s;
+}
+
+.rbc-btn-group button:hover {
+  background-color: hsl(var(--accent));
+}
+
+.rbc-btn-group button.rbc-active {
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  border-color: hsl(var(--primary));
+}
+
+.rbc-toolbar .rbc-toolbar-label {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: hsl(var(--primary));
+}
+
+.rbc-header {
+  border-bottom: 1px solid hsl(var(--border));
+  padding: 0.5rem;
+  text-align: center;
+}
+
+.rbc-day-bg.rbc-today {
+  background-color: hsl(var(--primary) / 0.05);
+}
+
+.rbc-event {
+  padding: 2px 5px;
+  border: none !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}

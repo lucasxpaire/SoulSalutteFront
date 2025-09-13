@@ -1,53 +1,56 @@
+// src/components/CalendarioPage.tsx
+
 "use client"
 
-import type React from "react"
-import { useState, useEffect } from "react"
-import { Card, CardContent } from "@/components/ui/card"
-import { Calendar } from "lucide-react"
-import type { Sessao } from "@/types"
-import { getSessoes } from "@/services/api"
-import { toast } from "sonner"
-import Calendario from "./Calendario"
+import React, { useState, useEffect } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Calendar as CalendarIcon } from "lucide-react";
+import type { Sessao, Cliente } from "@/types";
+import { getSessoes, getClientes } from "@/services/api";
+import { toast } from "sonner";
+import { AgendaSemanal } from "./AgendaSemanal"; // Importamos nosso novo componente
 
 interface CalendarioPageProps {
-  onAddSessao: (date: Date) => void
-  onEditSessao: (sessao: Sessao) => void
+  onAddSessao: (date: Date) => void;
+  onEditSessao: (sessao: Sessao) => void;
 }
 
 const CalendarioPage: React.FC<CalendarioPageProps> = ({ onAddSessao, onEditSessao }) => {
-  const [sessoes, setSessoes] = useState<Sessao[]>([])
-  const [loading, setLoading] = useState(true)
-  const [refreshKey, setRefreshKey] = useState(0)
+  const [sessoes, setSessoes] = useState<Sessao[]>([]);
+  const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  const loadSessoes = async () => {
+  const loadData = async () => {
     try {
-      setLoading(true)
-      const data = await getSessoes()
-      setSessoes(data)
+      setLoading(true);
+      const [sessoesData, clientesData] = await Promise.all([getSessoes(), getClientes()]);
+      setSessoes(sessoesData);
+      setClientes(clientesData);
     } catch (error) {
-      toast.error("Erro ao carregar sessões")
+      toast.error("Erro ao carregar dados do calendário");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    loadSessoes()
-  }, [refreshKey])
-
-  const handleSessaoUpdated = () => {
-    setRefreshKey((prev) => prev + 1)
-  }
+    loadData();
+  }, [refreshKey]);
+  
+  const handleSelectSlot = (start: Date) => {
+    onAddSessao(start);
+  };
 
   return (
     <div className="p-6 flex flex-col h-[calc(100vh-theme(spacing.16))]">
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Calendar className="w-6 h-6" />
-            Calendário
+            <CalendarIcon className="w-6 h-6" />
+            Agenda
           </h1>
-          <p className="text-muted-foreground">Gerencie suas sessões com funcionalidades de edição e visualização.</p>
+          <p className="text-muted-foreground">Gerencie suas sessões de forma rápida e intuitiva.</p>
         </div>
       </div>
 
@@ -57,21 +60,21 @@ const CalendarioPage: React.FC<CalendarioPageProps> = ({ onAddSessao, onEditSess
             <CardContent>
               <div className="text-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                <p className="text-muted-foreground">Carregando sessões...</p>
+                <p className="text-muted-foreground">Carregando agendamentos...</p>
               </div>
             </CardContent>
           </Card>
         ) : (
-          <Calendario
+          <AgendaSemanal
             sessoes={sessoes}
-            onEditSessao={onEditSessao}
-            onAddSessao={onAddSessao}
-            onSessaoUpdated={handleSessaoUpdated}
+            clientes={clientes}
+            onSelectSessao={onEditSessao}
+            onSelectSlot={handleSelectSlot}
           />
         )}
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default CalendarioPage
+export default CalendarioPage;
