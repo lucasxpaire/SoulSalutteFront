@@ -39,7 +39,6 @@ const RepeatOptionsPopup: React.FC<RepeatOptionsPopupProps> = ({
   }
 
   const handleCustomizeClick = () => {
-    onClose()
     onCustomizeClick()
   }
 

@@ -1,3 +1,5 @@
+// src/components/SessaoForm.tsx
+
 "use client"
 
 import type React from "react"
@@ -53,6 +55,16 @@ const SessaoForm: React.FC<{
   const [showEndTimePicker, setShowEndTimePicker] = useState(false)
   const [showRepeatOptions, setShowRepeatOptions] = useState(false)
   const [showCustomRecurrence, setShowCustomRecurrence] = useState(false)
+
+  // Função centralizada para fechar e limpar os estados dos pop-ups
+  const handleClose = () => {
+    setShowDatePicker(false)
+    setShowStartTimePicker(false)
+    setShowEndTimePicker(false)
+    setShowRepeatOptions(false)
+    setShowCustomRecurrence(false)
+    onClose() // Chama a função original para fechar o formulário principal
+  }
 
   useEffect(() => {
     if (isOpen) {
@@ -180,7 +192,7 @@ const SessaoForm: React.FC<{
         toast.success("Sessão agendada com sucesso!")
       }
       onSave()
-      onClose()
+      handleClose()
     } catch (error) {
       toast.error("Erro ao salvar sessão.")
     }
@@ -188,7 +200,7 @@ const SessaoForm: React.FC<{
 
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={onClose}>
+      <Dialog open={isOpen} onOpenChange={handleClose}>
         <DialogContent className="sm:max-w-2xl max-h-[95vh] flex flex-col p-0 bg-card">
           <DialogHeader className="p-6 border-b">
             <DialogTitle className="text-2xl text-primary">
@@ -304,7 +316,7 @@ const SessaoForm: React.FC<{
           </form>
 
           <DialogFooter className="p-6 border-t bg-muted/50">
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button type="button" variant="outline" onClick={handleClose}>
               Cancelar
             </Button>
             <Button type="submit" onClick={handleSubmit}>
@@ -314,7 +326,7 @@ const SessaoForm: React.FC<{
         </DialogContent>
       </Dialog>
 
-      <Dialog open={showDatePicker} onOpenChange={setShowDatePicker}>
+      <Dialog open={isOpen && showDatePicker} onOpenChange={setShowDatePicker}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Selecionar Data</DialogTitle>
@@ -326,7 +338,7 @@ const SessaoForm: React.FC<{
       </Dialog>
 
       <TimePickerPopup
-        isOpen={showStartTimePicker}
+        isOpen={isOpen && showStartTimePicker}
         onClose={() => setShowStartTimePicker(false)}
         onTimeSelect={handleStartTimeSelect}
         selectedTime={selectedStartTime}
@@ -334,7 +346,7 @@ const SessaoForm: React.FC<{
       />
 
       <TimePickerPopup
-        isOpen={showEndTimePicker}
+        isOpen={isOpen && showEndTimePicker}
         onClose={() => setShowEndTimePicker(false)}
         onTimeSelect={handleEndTimeSelect}
         selectedTime={selectedEndTime}
@@ -342,7 +354,7 @@ const SessaoForm: React.FC<{
       />
 
       <RepeatOptionsPopup
-        isOpen={showRepeatOptions}
+        isOpen={isOpen && showRepeatOptions}
         onClose={() => setShowRepeatOptions(false)}
         onRepeatSelect={handleRepeatSelect}
         onCustomizeClick={handleCustomRecurrenceClick}
@@ -350,7 +362,7 @@ const SessaoForm: React.FC<{
       />
 
       <CustomRecurrencePopup
-        isOpen={showCustomRecurrence}
+        isOpen={isOpen && showCustomRecurrence}
         onClose={() => setShowCustomRecurrence(false)}
         onSave={handleCustomRecurrenceSave}
       />

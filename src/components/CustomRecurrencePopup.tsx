@@ -64,7 +64,7 @@ const CustomRecurrencePopup: React.FC<CustomRecurrencePopupProps> = ({ isOpen, o
       endCount: endType === "count" ? endCount : undefined,
     }
     onSave(data)
-    onClose()
+    // onClose()
   }
 
   const getIntervalLabel = () => {
